@@ -1,22 +1,15 @@
 import pygame
+from agent import Agent
+from grid_world import GridWorld
+from game_loop import GameLoop
 
-class MAMOAC:
-    def __init__(self):
-        pygame.init()
-        self.screen = pygame.display.set_mode((800, 600))
-    
-    def run(self):
-        running = True
-        while running:
-            for event in pygame.event.get():
-                if event.type == pygame.QUIT:
-                    running = False
-    
-        pygame.quit()
-
+# Example usage
 def main():
-    app = MAMOAC()
-    app.run()
+    pygame.init()
+    grid = GridWorld()
+    agent1 = Agent(name="1", row=4, col=8)
+    agent2 = Agent(name="2", row=6, col=7)
+    GameLoop.run(grid, agent1, agent2)
 
 if __name__ == "__main__":
     main()
