@@ -55,7 +55,7 @@ def main():
     menu.add.selector('Number of Agents: ', 
                       [('1 Agents', 1), ('2 Agents', 2)],
                       onchange=set_num_agents)
-
+#test
     # Play button to start the game
     menu.add.button('Play', start_game)
 
