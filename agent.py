@@ -5,7 +5,7 @@ class KeyboardAgent:
         self.name = name
         self.row = row  # Initial row position
         self.col = col  # Initial column position
-        self.color = (255, 0, 0) if name == "1" else (0, 0, 255)  # Different color for agents
+        self.color = (0, 0, 0) if name == "1" else (0, 0, 255)  # Different color for agents
         self.radius = 15
         self.successful_shift = False
         self.successful_move = False
