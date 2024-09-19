@@ -9,8 +9,10 @@ class Agent:
         self.radius = 15
         self.successful_shift = False
         self.successful_move = False
+        self.move_count = 0
 
     def move(self, direction, grid):
+        self.move_count += 1
         # Movement logic for hexagonal grid with 6 directions
         self.successful_move = False
         if direction == "up":
@@ -87,9 +89,11 @@ class Agent:
                     self.col -= 1
                     self.successful_move = True
                 else: print("Movement direction not valid")
+                
         if self.successful_move:
             print(f"Agent {self.name} moved to row: {self.row}, col: {self.col}")
             print(f"Weight at this position: {grid.grid[self.row][self.col]['weight']}")
+            print(f"Move count Agent {self.name}: {self.move_count}")
 
     def shift_obstacle(self, direction, grid):
         print(f"Agent {self.name} is trying to shift the obstacle to {direction}")
