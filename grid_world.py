@@ -1,5 +1,6 @@
 import pygame
 import math
+import random
 
 class GridWorld:
     def __init__(self, width=800, height=600, rows=10, cols=10, hex_radius=30):
@@ -12,13 +13,19 @@ class GridWorld:
         pygame.display.set_caption("Hexagonal Grid World")
         self.grid = self.create_grid()
 
+        # Initialize Pygame's font module
+        pygame.font.init()
+        self.font = pygame.font.SysFont(None, 24)  # Use a default system font with size 24
+
     def create_grid(self):
         grid = []
         for row in range(self.rows):
             row_list = []
             for col in range(self.cols):
                 x, y = self.get_hex_position(row, col)
-                row_list.append((x, y))
+                # Assign a random weight between 0 and 1 for each cell
+                weight = round(random.uniform(0, 1), 2)
+                row_list.append({'position': (x, y), 'weight': weight})
             grid.append(row_list)
         return grid
 
@@ -31,10 +38,10 @@ class GridWorld:
     def draw(self):
         self.screen.fill((0, 0, 0))  # Clear screen
         for row in self.grid:
-            for hex_pos in row:
-                self.draw_hex(hex_pos)
+            for cell in row:
+                self.draw_hex(cell['position'], cell['weight'])
 
-    def draw_hex(self, position):
+    def draw_hex(self, position, weight):
         x, y = position
         points = []
         for i in range(6):
@@ -42,8 +49,15 @@ class GridWorld:
             px = x + self.hex_radius * math.cos(angle)
             py = y + self.hex_radius * math.sin(angle)
             points.append((px, py))
+
+        # Draw the hexagon
         pygame.draw.polygon(self.screen, (255, 255, 255), points, 2)
 
+        # Draw the weight in the center of the hexagon
+        weight_text = self.font.render(str(weight), True, (255, 255, 255))  # White color text
+        text_rect = weight_text.get_rect(center=(x, y))
+        self.screen.blit(weight_text, text_rect)
+
     def is_valid_position(self, row, col):
-        print(f"row: {row} and col: {col}")
+        #print(f"row: {row} and col: {col}")
         return 0 <= row < self.rows and 0 <= col < self.cols
