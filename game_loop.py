@@ -53,8 +53,8 @@ class GameLoop:
                                     agent1.shift_obstacle("top_left", grid)
                                 elif event.key == pygame.K_e:
                                     agent1.shift_obstacle("top_right", grid)
-
-                            agent1_mode = 'move'  # Reset to agent movement mode
+                            if agent1.successful_shift:    
+                                agent1_mode = 'move'  # Reset to agent movement mode
 
                     # Handle Agent 2 movement or obstacle movement
                     if event.key in [pygame.K_i, pygame.K_k, pygame.K_j, pygame.K_l, pygame.K_u, pygame.K_o]:
@@ -92,9 +92,8 @@ class GameLoop:
                                     agent2.shift_obstacle("top_left", grid)
                                 elif event.key == pygame.K_o:
                                     agent2.shift_obstacle("top_right", grid)
-
-                            agent2_mode = 'move'  # Reset to agent movement mode
-
+                            if agent2.successful_shift:
+                                agent2_mode = 'move'  # Reset to agent movement mode
 
             # Draw grid and agents
             grid.draw()
