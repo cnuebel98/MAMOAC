@@ -1,6 +1,6 @@
 import pygame
 
-class KeyboardAgent:
+class Agent:
     def __init__(self, name, row=0, col=0):
         self.name = name
         self.row = row  # Initial row position
