@@ -1,4 +1,5 @@
 import pygame
+from mc_simulator import MCSimulator
 
 class GameLoop:
     @staticmethod
@@ -19,6 +20,18 @@ class GameLoop:
                 if event.type == pygame.KEYDOWN:
                     # Handle Agent 1 movement or obstacle movement
                     if agent1:
+                        if event.key == pygame.K_SPACE:
+                            print("Simulation Started.")
+                            # Trigger Monte Carlo Simulation when space bar is pressed
+                            mc_simulator = MCSimulator(agent1, grid, iterations=500, time_limit=2.0)  # Set iterations and time limit
+                            best_move, best_shift = mc_simulator.simulate()
+
+                            # Apply the best move and shift to the actual agent
+                            if agent1_mode == 'move':
+                                agent1.move(best_move, grid)
+                            elif agent1_mode == 'shift_obstacle':
+                                agent1.shift_obstacle(best_shift, grid)
+
                         if event.key in [pygame.K_w, pygame.K_s, pygame.K_a, pygame.K_d, pygame.K_q, pygame.K_e]:
                             if agent1_mode == 'move':
                                 if event.key == pygame.K_w:
