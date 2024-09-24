@@ -1,5 +1,6 @@
 import pygame
 import random
+import copy
 
 class Agent:
     def __init__(self, name, row=0, col=0, color=(0, 0, 0)):
@@ -117,7 +118,7 @@ class Agent:
                 #print(f"Move count Agent {self.name}: {self.move_count_f1}")
 
     def shift_obstacle(self, direction, grid):
-        print(f"Agent {self.name} is trying to shift the obstacle to {direction}")
+        #print(f"Agent {self.name} is trying to shift the obstacle to {direction}")
         self.successful_shift = False
         target_cell = (0, 0)
         if direction == "up":
@@ -214,7 +215,7 @@ class Agent:
 
         # spill mechnics
         if self.successful_shift:
-            print(f"Obstacle successfully shifted to: {direction}")
+            print(f"Successful shift to: {direction}")
             self.weight_shifted_f2 = round(self.weight_shifted_f2 + self.next_weigth_to_move, 2)
             self.append_to_shift(direction)
 
@@ -300,3 +301,6 @@ class Agent:
     def append_to_shift(self, direction):
         self.shift_directions.append(direction)
         #print(f"Shift list: {self.shift_directions}")
+
+    def copy_current_agent(self):
+        return copy.deepcopy(self.agent)

@@ -3,17 +3,20 @@ import pygame_menu
 from agent import Agent
 from grid_world import GridWorld
 from game_loop import GameLoop
+from renderer import Renderer
 
 # Variables for grid size and number of agents
 grid_size = [10, 17]  # Default grid size (rows, cols)
 num_agents = 1  # Default number of agents
 
-# This function will be called when you press the "Play" button
 def start_game():
     pygame.init()
 
     # Create the grid with the selected size
     grid = GridWorld(rows=grid_size[0], cols=grid_size[1])
+
+    # Create the renderer with the grid
+    grid_renderer = Renderer(grid)
 
     # Create agents dynamically based on user input
     agents = []
@@ -22,11 +25,11 @@ def start_game():
         col = i * 2  # Spread agents across the grid horizontally (just an example)
         agents.append(Agent(name=f"Agent {i+1}", row=row, col=col))
 
-    # Start the game loop with the created grid and agents
+    # Start the game loop with the created grid, agents, and renderer
     if num_agents == 1:
-        GameLoop.run(grid, agents[0], None)  # Single player scenario
+        GameLoop.run(grid, grid_renderer, agents[0], None)  # Single player scenario
     elif num_agents >= 2:
-        GameLoop.run(grid, agents[0], agents[1])  # Two-player scenario
+        GameLoop.run(grid, grid_renderer, agents[0], agents[1])  # Two-player scenario
 
 def set_grid_size(value, size):
     print(size)
