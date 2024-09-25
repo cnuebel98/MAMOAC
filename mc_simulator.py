@@ -2,6 +2,7 @@ import random
 import time
 import copy
 from renderer import Renderer
+import plotly.graph_objects as go
 
 class MCSimulator:
     def __init__(self, agent, grid, simu_depth=100, time_limit=1.0, max_rollouts=10000):
@@ -80,8 +81,8 @@ class MCSimulator:
             # that was simulated is already in the list of first actions
             # if not we append it
             # also we have to add an empty list to the fitness_of_first_actions
-            print(f"list of first actions before: {list_of_first_actions}")
-            print(f"list of fitness before: {fitness_of_first_actions}")
+            #print(f"list of first actions before: {list_of_first_actions}")
+            #print(f"list of fitness before: {fitness_of_first_actions}")
             
             search_tuple = (temp_agent.path_directions[0], temp_agent.shift_directions[0])
             #print(f'searching for: {search_tuple}')
@@ -99,15 +100,75 @@ class MCSimulator:
                 fitness_of_first_actions.append([fitness_tuple])
 
             #print(f"list of first actions after {list_of_first_actions}")
-            print(f"list of fitness after {fitness_of_first_actions}")
+            #print(f"list of fitness after {fitness_of_first_actions}")
             #print(f"a Path: {temp_agent.path_directions}")
             #print(f"tempAgent posititon: ({temp_agent.row, temp_agent.col})")
-                
-
+        #print(f'all fitness values: {fitness_of_first_actions}')
+        # now we have a list of first actions and a list of fitness values
+        # call a plotting function to look at the fitness values
+        pareto_optimal_solutions = self.get_pareto_fronts(list_of_first_actions, fitness_of_first_actions)
+        #print(f'Pareto Fronts: {x}')
+        self.plot_fitness(list_of_first_actions, fitness_of_first_actions, title="All Fitness Values")
+        self.plot_fitness(list_of_first_actions, pareto_optimal_solutions, title="Pareto Fronts")
         #print(f'max rollouts reached: {rollout_counter}')
         #print("1 sec later")
 
         return best_move, best_shift
+    
+    def get_pareto_fronts(self, list_of_first_actions, fitness_of_first_actions):
+        list_of_pareto_fronts = []
+        # Loop over each sublist of fitness data
+        for i, fitness_sublist in enumerate(fitness_of_first_actions):
+            pareto_front = []
+            # Check each point in the sublist
+            for j, (x1, y1) in enumerate(fitness_sublist):
+                is_pareto = True
+                for k, (x2, y2) in enumerate(fitness_sublist):
+                    if k == j:
+                        continue
+                    # Check for strict Pareto dominance
+                    if (x2 <= x1 and y2 <= y1) and (x2 < x1 or y2 < y1):
+                        is_pareto = False
+                        break
+                # If no other point dominates (x1, y1), it's Pareto optimal
+                if is_pareto:
+                    pareto_front.append((x1, y1))
+            list_of_pareto_fronts.append(pareto_front)
+        return list_of_pareto_fronts
+
+    def plot_fitness(self, list_of_first_actions, fitness_of_first_actions, title="Objective Values"):
+        fig = go.Figure()
+        
+        # Loop over each sublist of fitness data
+        for i, fitness_sublist in enumerate(fitness_of_first_actions):
+            # Unpack the tuples in the sublist for plotting
+            x_values = [x for (x, _) in fitness_sublist]
+            y_values = [y for (_, y) in fitness_sublist]
+            
+            # Get the corresponding label for the current sublist
+            label = list_of_first_actions[i]
+
+            # Add a scatter plot trace for each sublist
+            fig.add_trace(go.Scatter(
+                x=x_values,
+                y=y_values,
+                mode='markers',
+                name=str(label),  # Legend label for this sublist
+                marker=dict(size=10),  # Customize marker size if needed
+                line=dict(width=2),    # Customize line width
+            ))
+        
+        # Customize layout
+        fig.update_layout(
+            title=title,
+            xaxis_title="Full cells",
+            yaxis_title="Weight Shifted",
+            legend_title="First Actions",
+            showlegend=True
+        )
+        
+        # Show the plot
+        fig.show()
 
     def evaluate(self, temp_agent, temp_grid):
         """ This function evaluates the agent in terms of how much area was cleared 
