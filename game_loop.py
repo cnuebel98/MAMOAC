@@ -22,7 +22,7 @@ class GameLoop:
                         if event.key == pygame.K_SPACE:
                             print("Simulation Started.")
                             # Trigger Monte Carlo Simulation when space bar is pressed
-                            mc_simulator = MCSimulator(agent1, grid, simu_depth=3, time_limit=0.01, max_rollouts=4000000)
+                            mc_simulator = MCSimulator(agent1, grid, simu_depth=50, time_limit=1, max_rollouts=4000000)
                             best_move, best_shift = mc_simulator.simulate()
 
                             if agent1_mode == 'move':
