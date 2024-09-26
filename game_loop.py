@@ -20,16 +20,24 @@ class GameLoop:
                 if event.type == pygame.KEYDOWN:
                     if agent1:
                         if event.key == pygame.K_SPACE:
-                            print("Simulation Started.")
+                            #print("Simulation Started.")      
                             # Trigger Monte Carlo Simulation when space bar is pressed
-                            mc_simulator = MCSimulator(agent1, grid, simu_depth=50, time_limit=1, max_rollouts=4000000)
-                            best_move, best_shift = mc_simulator.simulate()
-
-                            if agent1_mode == 'move':
-                                agent1.move(best_move, grid)
-                            elif agent1_mode == 'shift_obstacle':
-                                agent1.shift_obstacle(best_shift, grid)
-
+                            # repeat the steps below 10 times
+                            for _ in range(10):
+                                mc_simulator = MCSimulator(agent1, grid, simu_depth=100, time_limit=1, max_rollouts=4000000)
+                                best_move, best_shift = mc_simulator.simulate()
+                                print((best_move, best_shift))
+                                if agent1_mode == 'move':
+                                    agent1.move(best_move, grid)
+                                    agent1_mode = 'shift_obstacle'
+                                if agent1_mode == 'shift_obstacle':
+                                    agent1.shift_obstacle(best_shift, grid)
+                                    agent1_mode = 'move'
+                                best_move, best_shift = None, None 
+                                #update the screen with grid and agent
+                                grid_renderer.draw()
+                                agent1.draw(grid_renderer.screen, grid)
+                                pygame.display.flip()
                         if event.key in [pygame.K_w, pygame.K_s, pygame.K_a, pygame.K_d, pygame.K_q, pygame.K_e]:
                             if agent1_mode == 'move':
                                 # Handle the agent's movement

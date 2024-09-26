@@ -100,18 +100,18 @@ class Agent:
                 else: print("Movement direction not valid")
                 
         if self.successful_move:
-            print(f"Successful move to {direction}")
+            #print(f"Successful move to {direction}")
             self.append_to_path(direction)
             self.next_weigth_to_move = grid.grid[self.row][self.col]['weight']
             
             if self.next_weigth_to_move == 0:
                 self.append_to_shift("no_weight_to_shift")
 
-            if self.row == self.goal_row and self.col == self.goal_col:
-                print("-----------------")
-                print(f"Agent {self.name} reached the goal")
-                print(f"Move count Agent {self.name}: {self.move_count_f1}")
-                print(f"Weight shifted: {self.weight_shifted_f2}")
+            #if self.row == self.goal_row and self.col == self.goal_col:
+                #print("-----------------")
+                #print(f"Agent {self.name} reached the goal")
+                #print(f"Move count Agent {self.name}: {self.move_count_f1}")
+                #print(f"Weight shifted: {self.weight_shifted_f2}")
             #else:
                 #print(f"Agent {self.name} moved to row: {self.row}, col: {self.col}")
                 #print(f"Weight at this position: {grid.grid[self.row][self.col]['weight']}")
@@ -215,14 +215,11 @@ class Agent:
 
         # spill mechnics
         if self.successful_shift:
-            print(f"Successful shift to: {direction}")
             self.weight_shifted_f2 = round(self.weight_shifted_f2 + self.next_weigth_to_move, 2)
             self.append_to_shift(direction)
 
             spill_probability = grid.grid[target_cell[0]][target_cell[1]]['weight']
-            #print(f"spill probability: {spill_probability}")
             if self.max_weight_till_spill < spill_probability:
-                print("Obstacle spill triggered")
                 # how to access all neighbors of target cell
                 weight_to_spill = spill_probability
                 count_neighbors_to_spill_on = 0
@@ -279,7 +276,6 @@ class Agent:
                     if grid.is_valid_position(target_cell[0] - 1, target_cell[1]):
                         count_neighbors_to_spill_on += 1
                         neighbors_to_spill_on.append((target_cell[0] - 1, target_cell[1]))
-                print(f"Neighbors to spill on: {count_neighbors_to_spill_on}")
                 
                 weight_per_neighbor = round(weight_to_spill / count_neighbors_to_spill_on, 2)
                 for neighbor in neighbors_to_spill_on:

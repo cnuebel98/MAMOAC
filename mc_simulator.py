@@ -14,10 +14,18 @@ class MCSimulator:
         :param time_limit: Maximum time limit for running the simulations in seconds.
         """
         self.agent = agent
-        self.grid = grid # Use a method to get relevant data
+        self.grid = grid
         self.simu_depth = simu_depth
+        # simulations run for the time_limit but for a mximum of max_rollouts
         self.time_limit = time_limit
         self.max_rollouts = max_rollouts
+        self.best_move = None
+        self.best_shift = None
+        
+        # list_of_first_actions = [('move_direction','shift_direction'),('',''),('',''), ...] max len: 6x6=36
+        # list_of_fitness = [[(f1_value of first path, f2_value first path), (f1_value of next path, f2_value next path), ...],[(2,4), (4,9), ...],[(21,43), (45, 23)]]
+        self.list_of_first_actions = []
+        self.fitness_of_first_actions = []
 
     def simulate(self):
         """
@@ -26,9 +34,7 @@ class MCSimulator:
             best_move (str): Best move direction ('up', 'down', 'top_left', etc.)
             best_shift (str): Best obstacle shift direction ('up', 'down', etc.)
         """
-        best_move = None
-        best_shift = None
-        best_score = float('inf')  # Initialize with a large number, we want to minimize the score
+        
         rollout_counter = 0
         start_time = time.time()
         print("---------------------------")
@@ -36,18 +42,15 @@ class MCSimulator:
         #print(f'Coords: ({self.agent.row}, {self.agent.col})')
         #print(temp_grid[self.agent.row][self.agent.col]['weight'])
 
-        # simulations run for the time_limit but for a mximum of max_rollouts
-
-        # list_of_first_actions = [('move_direction','shift_direction'),('',''),('',''), ...] max len: 6x6=36
-        list_of_first_actions = []
-        # list_of_fitness = [[(f1_value of first path, f2_value first path), (f1_value of next path, f2_value next path), ...],[(2,4), (4,9), ...],[(21,43), (45, 23)]]
-        fitness_of_first_actions = []
-
         for _ in range(self.max_rollouts):
             rollout_counter += 1
             # For each rollout, the grid and agent must be reset
             temp_agent = copy.deepcopy(self.agent)
             temp_grid = copy.deepcopy(self.grid)
+
+            # Reset path and shift directions for the temporary agent
+            temp_agent.path_directions = []
+            temp_agent.shift_directions = []
             
             # if time limit is reached, the for loop is broken
             if time.time() - start_time > self.time_limit:
@@ -74,48 +77,98 @@ class MCSimulator:
                 temp_agent.shift_obstacle(shift_direction, temp_grid)
 
                 if ((temp_agent.row, temp_agent.col) == (temp_agent.goal_row, temp_agent.goal_col)):
-                    print("simu ended before 5 moves! -----------------------------------")
                     break
 
             # now we need to see if the first action of the path 
             # that was simulated is already in the list of first actions
             # if not we append it
             # also we have to add an empty list to the fitness_of_first_actions
-            #print(f"list of first actions before: {list_of_first_actions}")
-            #print(f"list of fitness before: {fitness_of_first_actions}")
             
             search_tuple = (temp_agent.path_directions[0], temp_agent.shift_directions[0])
-            #print(f'searching for: {search_tuple}')
             fitness_tuple = self.evaluate(temp_agent=temp_agent, temp_grid=temp_grid)
-            if (search_tuple in list_of_first_actions):
-                print(f'({temp_agent.path_directions[0], temp_agent.shift_directions[0]}) already in list')
+            if (search_tuple in self.list_of_first_actions):
+                #print(f'({temp_agent.path_directions[0], temp_agent.shift_directions[0]}) already in list')
                 # Here we find the index of where the actions are in the list 
-                found_at_index = list_of_first_actions.index(search_tuple)
+                found_at_index = self.list_of_first_actions.index(search_tuple)
                 # then we need to add the fitness tuple to the fitness list at this index
-                fitness_of_first_actions[found_at_index].append(fitness_tuple)
+                self.fitness_of_first_actions[found_at_index].append(fitness_tuple)
                 
             else:
                 #print(f'({search_tuple}) not in list yet')
-                list_of_first_actions.append(search_tuple)
-                fitness_of_first_actions.append([fitness_tuple])
+                self.list_of_first_actions.append(search_tuple)
+                self.fitness_of_first_actions.append([fitness_tuple])
 
-            #print(f"list of first actions after {list_of_first_actions}")
-            #print(f"list of fitness after {fitness_of_first_actions}")
-            #print(f"a Path: {temp_agent.path_directions}")
-            #print(f"tempAgent posititon: ({temp_agent.row, temp_agent.col})")
-        #print(f'all fitness values: {fitness_of_first_actions}')
         # now we have a list of first actions and a list of fitness values
+        # get the pareto fronts of this data
+        pareto_optimal_solutions = self.get_pareto_fronts(self.fitness_of_first_actions)
+        
         # call a plotting function to look at the fitness values
-        pareto_optimal_solutions = self.get_pareto_fronts(list_of_first_actions, fitness_of_first_actions)
-        #print(f'Pareto Fronts: {x}')
-        self.plot_fitness(list_of_first_actions, fitness_of_first_actions, title="All Fitness Values")
-        self.plot_fitness(list_of_first_actions, pareto_optimal_solutions, title="Pareto Fronts")
-        #print(f'max rollouts reached: {rollout_counter}')
-        #print("1 sec later")
+        #self.plot_fitness(list_of_first_actions, fitness_of_first_actions, title="All Fitness Values")
+        #self.plot_fitness(list_of_first_actions, pareto_optimal_solutions, title="Pareto Fronts")
 
+        # now we need to find the best move and shift
+        # based on the hypervolume
+        list_hv_values = self.get_hypervolume(pareto_optimal_solutions)
+        # get index of the hv list where the value is highest
+        best_hv_index = list_hv_values.index(max(list_hv_values))
+        #print(self.list_of_first_actions)
+        #print(f'Best Hypervolume Index: {best_hv_index} in list {list_hv_values}')
+        
+        best_move = self.list_of_first_actions[best_hv_index][0]
+        best_shift = self.list_of_first_actions[best_hv_index][1]
+        # TODO based on the C-metric
+        #self.get_index_of_front_with_best_C_metric(pareto_optimal_solutions)
+
+        #print(best_move, best_shift)
         return best_move, best_shift
     
-    def get_pareto_fronts(self, list_of_first_actions, fitness_of_first_actions):
+    def get_index_of_front_with_best_C_metric(self, pareto_fronts):
+        # TODO implement the C-metric
+        ...
+
+    def get_hypervolume(self, pareto_fronts):
+        # Get the reference point (f1, f2)
+        ref_point = self.get_ref_point(pareto_fronts)
+        # Initialize a list to store hypervolumes per front
+        hypervolumes = []
+        # Iterate over each Pareto front
+        for front in pareto_fronts:
+            # Sort the points on the Pareto front by the first objective (f1) in descending order
+            sorted_front = sorted(front, key=lambda x: x[0], reverse=True)
+            # Initialize the hypervolume for the current Pareto front
+            hypervolume = 0
+            # Initialize the previous point's x (f1) as the reference point's x-coordinate
+            prev_x = ref_point[0]
+            # Calculate the hypervolume for this Pareto front
+            for p in sorted_front:
+                # Get the current point (x, y)
+                x, y = p
+                # Width of the rectangle is the difference between the current x and the previous x
+                width = prev_x - x
+                # Height of the rectangle is the difference between the reference point's y and the current y
+                height = ref_point[1] - y
+                # Add the rectangle's area to the hypervolume
+                if width > 0 and height > 0:  # Make sure both width and height are positive
+                    hypervolume += width * height
+                # Update the previous x-coordinate to the current x-coordinate
+                prev_x = x
+            # Append the hypervolume for this front to the result list
+            hypervolumes.append(hypervolume)
+        return hypervolumes
+
+    def get_ref_point(self, pareto_fronts):
+        # Implement the calculation of ref point
+        worst_f1_free_cells = 0
+        worst_f2_weight_shifted = 0
+        for front in pareto_fronts:
+            for f1, f2 in front:
+                if f1 > worst_f1_free_cells:
+                    worst_f1_free_cells = f1
+                if f2 > worst_f2_weight_shifted:
+                    worst_f2_weight_shifted = f2
+        return (round(worst_f1_free_cells*1.1), round(worst_f2_weight_shifted*1.1, 2))
+
+    def get_pareto_fronts(self, fitness_of_first_actions):
         list_of_pareto_fronts = []
         # Loop over each sublist of fitness data
         for i, fitness_sublist in enumerate(fitness_of_first_actions):
