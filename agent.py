@@ -302,3 +302,10 @@ class Agent:
 
     def copy_current_agent(self):
         return copy.deepcopy(self.agent)
+    
+    def print_results(self, empty_cells):
+        #print(f"Path: {self.path_directions}")
+        #print(f"Shift: {self.shift_directions}")
+        print(f"Move count: {self.move_count_f1}")
+        print(f"Weight shifted: {self.weight_shifted_f2}")
+        print(f"Empty cells: {empty_cells}")

@@ -77,7 +77,7 @@ class MO_MCSimulator:
                     goal_reached = True
                 if ((temp_agent.row, temp_agent.col) == (temp_agent.goal_row, temp_agent.goal_col)) and goal_reached == True:
                     returned_to_start = True
-                    break
+                    
             rollout_counter += 1
             # now we need to see if the first action of the path 
             # that was simulated is already in the list of first actions
@@ -205,9 +205,9 @@ class MO_MCSimulator:
                 x=x_values,
                 y=y_values,
                 mode='markers',
-                name=str(label),  # Legend label for this sublist
-                marker=dict(size=10),  # Customize marker size if needed
-                line=dict(width=2),    # Customize line width
+                name=str(label),        # Legend label for this sublist
+                marker=dict(size=10),   # Customize marker size if needed
+                line=dict(width=2),     # Customize line width
             ))
         
         # Customize layout
