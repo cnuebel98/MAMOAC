@@ -3,8 +3,9 @@ import time
 import copy
 from renderer import Renderer
 import plotly.graph_objects as go
+from helper_functions import HelperFunctions
 
-class MCSimulator:
+class MO_MCSimulator:
     def __init__(self, agent, grid, simu_depth=100, time_limit=1.0, max_rollouts=10000):
         """
         Monte Carlo Simulator class
@@ -19,8 +20,6 @@ class MCSimulator:
         # simulations run for the time_limit but for a mximum of max_rollouts
         self.time_limit = time_limit
         self.max_rollouts = max_rollouts
-        self.best_move = None
-        self.best_shift = None
         
         # list_of_first_actions = [('move_direction','shift_direction'),('',''),('',''), ...] max len: 6x6=36
         # list_of_fitness = [[(f1_value of first path, f2_value first path), (f1_value of next path, f2_value next path), ...],[(2,4), (4,9), ...],[(21,43), (45, 23)]]
@@ -31,22 +30,19 @@ class MCSimulator:
         """
         Perform Monte Carlo simulations to determine the best move and obstacle shift.
         Returns:
-            best_move (str): Best move direction ('up', 'down', 'top_left', etc.)
-            best_shift (str): Best obstacle shift direction ('up', 'down', etc.)
+            best_move (str): Best move direction
+            best_shift (str): Best obstacle shift direction
         """
-        
-        rollout_counter = 0
+        rollout_counter=0
         start_time = time.time()
-        print("---------------------------")
-        print("Hi from simulation function")
-        #print(f'Coords: ({self.agent.row}, {self.agent.col})')
-        #print(temp_grid[self.agent.row][self.agent.col]['weight'])
 
         for _ in range(self.max_rollouts):
-            rollout_counter += 1
             # For each rollout, the grid and agent must be reset
             temp_agent = copy.deepcopy(self.agent)
             temp_grid = copy.deepcopy(self.grid)
+
+            goal_reached = False
+            returned_to_start = False
 
             # Reset path and shift directions for the temporary agent
             temp_agent.path_directions = []
@@ -59,7 +55,7 @@ class MCSimulator:
             # random simulations are done until goal is reached of until max simu depth is reached
             for _ in range(self.simu_depth):
                 # we get possible movement directions
-                move_directions = self.get_possible_directions((temp_agent.row, temp_agent.col), temp_grid=temp_grid)
+                move_directions = HelperFunctions.get_possible_directions((temp_agent.row, temp_agent.col), temp_grid=temp_grid)
                 # choose index from possible move directions
                 move_direction_index = random.randint(0, len(move_directions)-1)
                 # get direction from the index
@@ -68,7 +64,7 @@ class MCSimulator:
                 temp_agent.move(move_direction, temp_grid)
                 
                 # from the new position, get possible shift directions
-                shift_directions = self.get_possible_directions((temp_agent.row, temp_agent.col), temp_grid=temp_grid)
+                shift_directions = HelperFunctions.get_possible_directions((temp_agent.row, temp_agent.col), temp_grid=temp_grid)
                 # randomly choose index from possible shift directions
                 shift_direction_index = random.randint(0, len(shift_directions)-1)
                 # get the actual direction to shift to
@@ -76,28 +72,37 @@ class MCSimulator:
                 # shift the weight to the chosen neighbor cell
                 temp_agent.shift_obstacle(shift_direction, temp_grid)
 
-                if ((temp_agent.row, temp_agent.col) == (temp_agent.goal_row, temp_agent.goal_col)):
+                if ((temp_agent.row, temp_agent.col) == (temp_agent.goal_row, temp_agent.goal_col)) and goal_reached == False:
+                    temp_agent.goal_row, temp_agent.goal_col = temp_agent.home_row, temp_agent.home_col
+                    goal_reached = True
+                if ((temp_agent.row, temp_agent.col) == (temp_agent.goal_row, temp_agent.goal_col)) and goal_reached == True:
+                    returned_to_start = True
                     break
-
+            rollout_counter += 1
             # now we need to see if the first action of the path 
             # that was simulated is already in the list of first actions
             # if not we append it
-            # also we have to add an empty list to the fitness_of_first_actions
-            
+            # search tuple is the first action of the path
             search_tuple = (temp_agent.path_directions[0], temp_agent.shift_directions[0])
-            fitness_tuple = self.evaluate(temp_agent=temp_agent, temp_grid=temp_grid)
+            # evaluate the agent by full cells and weight shifted
+            fitness_tuple = self.evaluate_full_cells_WSUM_weight_shifted_steps_taken(temp_agent=temp_agent, temp_grid=temp_grid)
+            fitness_tuple = (fitness_tuple[0], fitness_tuple[1])
+
+            if (goal_reached == True) and (returned_to_start == False):
+                fitness_tuple = (fitness_tuple[0]*0.5, fitness_tuple[1]*0.5)
+            elif returned_to_start == True:
+                fitness_tuple = (fitness_tuple[0]*0.1, fitness_tuple[1]*0.1)
+
             if (search_tuple in self.list_of_first_actions):
-                #print(f'({temp_agent.path_directions[0], temp_agent.shift_directions[0]}) already in list')
                 # Here we find the index of where the actions are in the list 
                 found_at_index = self.list_of_first_actions.index(search_tuple)
                 # then we need to add the fitness tuple to the fitness list at this index
                 self.fitness_of_first_actions[found_at_index].append(fitness_tuple)
-                
             else:
-                #print(f'({search_tuple}) not in list yet')
+                # new first action found and appended to the list
                 self.list_of_first_actions.append(search_tuple)
                 self.fitness_of_first_actions.append([fitness_tuple])
-
+        #print(rollout_counter)
         # now we have a list of first actions and a list of fitness values
         # get the pareto fronts of this data
         pareto_optimal_solutions = self.get_pareto_fronts(self.fitness_of_first_actions)
@@ -106,8 +111,7 @@ class MCSimulator:
         #self.plot_fitness(list_of_first_actions, fitness_of_first_actions, title="All Fitness Values")
         #self.plot_fitness(list_of_first_actions, pareto_optimal_solutions, title="Pareto Fronts")
 
-        # now we need to find the best move and shift
-        # based on the hypervolume
+        # now we need to find the best move and shift based on the hypervolume
         list_hv_values = self.get_hypervolume(pareto_optimal_solutions)
         # get index of the hv list where the value is highest
         best_hv_index = list_hv_values.index(max(list_hv_values))
@@ -116,15 +120,10 @@ class MCSimulator:
         
         best_move = self.list_of_first_actions[best_hv_index][0]
         best_shift = self.list_of_first_actions[best_hv_index][1]
-        # TODO based on the C-metric
-        #self.get_index_of_front_with_best_C_metric(pareto_optimal_solutions)
-
-        #print(best_move, best_shift)
+        
         return best_move, best_shift
-    
-    def get_index_of_front_with_best_C_metric(self, pareto_fronts):
-        # TODO implement the C-metric
-        ...
+
+    ######################## ACTION SELECTION FUNCTIONS ########################
 
     def get_hypervolume(self, pareto_fronts):
         # Get the reference point (f1, f2)
@@ -223,7 +222,9 @@ class MCSimulator:
         # Show the plot
         fig.show()
 
-    def evaluate(self, temp_agent, temp_grid):
+    ######################## EVALUATION FUNCTIONS ########################
+
+    def evaluate_full_cells_weight_shifted(self, temp_agent, temp_grid):
         """ This function evaluates the agent in terms of how much area was cleared 
         and how much obstacle weight needed to be shifted for that. 
         Returns a tuple (full_cells, weight_shifted)"""
@@ -235,42 +236,29 @@ class MCSimulator:
                 if cell['weight'] > 0:
                     full_cells += 1
         return (full_cells, weight_shifted)
+    
+    def evaluate_full_cells_WSUM_weight_shifted_steps_taken(self, temp_agent, temp_grid):
+        '''This function evaluates the agents in terms of how much area was cleared,
+        how many steps they took and how much obstacle weight needed to be shifted for that.'''
+        full_cells = 0
+        steps_taken = len(temp_agent.path_directions)
+        WSUM_Steps_and_weight = 1/2*temp_agent.weight_shifted_f2 + 1/2*steps_taken
+        # Loop through the grid and count the number of cells with weight >= threshold
+        for row in temp_grid.grid:
+            for cell in row:
+                if cell['weight'] > 0:
+                    full_cells += 1
+        return full_cells, WSUM_Steps_and_weight
 
-    def get_possible_directions(self, current_cell, temp_grid):
-        '''This function returns a list of possible direction 
-        for moving to or shifting to'''
-        directions = []
-        # even, even or odd, even: A2
-        if ((current_cell[0] % 2 == 1 and current_cell[1] % 2 == 0)
-            or (current_cell[0] % 2 == 0 and current_cell[1] % 2 == 0)):
-            # check all 6 possible cells for validity
-            if temp_grid.is_valid_position(current_cell[0], current_cell[1] + 1):
-                directions.append("bottom_right")
-            if temp_grid.is_valid_position(current_cell[0] - 1, current_cell[1]):
-                directions.append("up")
-            if temp_grid.is_valid_position(current_cell[0] + 1, current_cell[1]):
-                directions.append("down")
-            if temp_grid.is_valid_position(current_cell[0], current_cell[1] - 1):
-                directions.append("bottom_left")
-            if temp_grid.is_valid_position(current_cell[0] - 1, current_cell[1] + 1):
-                directions.append("top_right")
-            if temp_grid.is_valid_position(current_cell[0] - 1, current_cell[1] - 1):
-                directions.append("top_left")
-
-        # row even col odd or odd and odd: A1
-        elif((current_cell[0] % 2 == 0 and current_cell[1] % 2 == 1)
-            or (current_cell[0] % 2 == 1 and current_cell[1] % 2 == 1)):
-            # check all 6 possible cells for validity
-            if temp_grid.is_valid_position(current_cell[0] + 1, current_cell[1]):
-                directions.append("down")
-            if temp_grid.is_valid_position(current_cell[0] + 1, current_cell[1] + 1):
-                directions.append("bottom_right")
-            if temp_grid.is_valid_position(current_cell[0] + 1, current_cell[1] - 1):
-                directions.append("bottom_left")
-            if temp_grid.is_valid_position(current_cell[0], current_cell[1] - 1):
-                directions.append("top_left")
-            if temp_grid.is_valid_position(current_cell[0], current_cell[1] + 1):
-                directions.append("top_right")
-            if temp_grid.is_valid_position(current_cell[0] - 1, current_cell[1]):
-                directions.append("up")
-        return directions
+    def evaluate_full_cells_weight_shifted_steps_taken(self, temp_agent, temp_grid):
+        '''This function evaluates the agents in terms of how much area was cleared,
+        how many steps they took and how much obstacle weight needed to be shifted for that.'''
+        full_cells = 0
+        steps_taken = len(temp_agent.path_directions)
+        weight_shifted = temp_agent.weight_shifted_f2
+        # Loop through the grid and count the number of cells with weight >= threshold
+        for row in temp_grid.grid:
+            for cell in row:
+                if cell['weight'] > 0:
+                    full_cells += 1
+        return (full_cells, weight_shifted, steps_taken)
