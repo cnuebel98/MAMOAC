@@ -1,6 +1,7 @@
 import pygame
 import random
 import copy
+import pandas as pd
 
 class Agent:
     def __init__(self, name, row=0, col=0, color=(0, 0, 0)):
@@ -21,6 +22,7 @@ class Agent:
         self.weight_shifted_f2 = 0
         self.path_directions = []
         self.shift_directions = []
+        self.results = []
 
     def move(self, direction, grid):
         self.move_count_f1 += 1
@@ -108,16 +110,6 @@ class Agent:
             
             if self.next_weigth_to_move == 0:
                 self.append_to_shift("no_weight_to_shift")
-
-            #if self.row == self.goal_row and self.col == self.goal_col:
-                #print("-----------------")
-                #print(f"Agent {self.name} reached the goal")
-                #print(f"Move count Agent {self.name}: {self.move_count_f1}")
-                #print(f"Weight shifted: {self.weight_shifted_f2}")
-            #else:
-                #print(f"Agent {self.name} moved to row: {self.row}, col: {self.col}")
-                #print(f"Weight at this position: {grid.grid[self.row][self.col]['weight']}")
-                #print(f"Move count Agent {self.name}: {self.move_count_f1}")
 
     def shift_obstacle(self, direction, grid):
         #print(f"Agent {self.name} is trying to shift the obstacle to {direction}")
@@ -303,9 +295,19 @@ class Agent:
     def copy_current_agent(self):
         return copy.deepcopy(self.agent)
     
-    def print_results(self, empty_cells):
+    def print_results(self, full_cells):
         #print(f"Path: {self.path_directions}")
         #print(f"Shift: {self.shift_directions}")
-        print(f"Move count: {self.move_count_f1}")
-        print(f"Weight shifted: {self.weight_shifted_f2}")
-        print(f"Empty cells: {empty_cells}")
+        print("-----------------")
+        print(f"Agent {self.name} reached the goal")
+        print(f"Path Length: {self.move_count_f1}")
+        print(f"Weight Shifted: {self.weight_shifted_f2}")
+        print(f"Full Cells: {full_cells}")
+
+    def save_results(self):
+        # Create a DataFrame from the results
+        df = pd.DataFrame(self.results, columns=['steps', 'weight_shifted', 'full_cells', 'move_dirs', 'shift_dirs'])
+        df.to_csv(f"results/{self.name}_results.csv", index=False)
+
+    def record_result(self, full_cells):
+        self.results.append([self.move_count_f1, self.weight_shifted_f2, full_cells, self.path_directions, self.shift_directions])
