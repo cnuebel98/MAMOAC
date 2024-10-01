@@ -24,7 +24,7 @@ class GameLoop:
                             running = False
 
                         if event.key == pygame.K_m:
-                            print("Hi")
+                            print("You pressed M, Congrats!")
 
                         if event.key == pygame.K_SPACE:
                             print("Triggered MO MC Simulator")
@@ -45,14 +45,14 @@ class GameLoop:
                                 if (agent1.row == agent1.goal_row and agent1.goal_col == agent1.col):
                                     agent1.goal_row, agent1.goal_col = agent1.home_row, agent1.home_col
                                     if ((agent1.row, agent1.col) == (agent1.home_row, agent1.home_col)):
-                                        print("Goal Reached and Returned to Home.")
+                                        #print("Goal Reached and Returned to Home.")
                                         empty_cells = grid.get_empty_cells()
                                         agent1.print_results(empty_cells)
                                         break
                                 #update the screen with grid and agent
-                                #grid_renderer.draw()
-                                #agent1.draw(grid_renderer.screen, grid)
-                                #pygame.display.flip()
+                                grid_renderer.draw()
+                                agent1.draw(grid_renderer.screen, grid)
+                                pygame.display.flip()
                             
                         if event.key == pygame.K_r:
                             print("Triggered MO RHEA")
