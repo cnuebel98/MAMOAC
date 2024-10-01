@@ -1,5 +1,6 @@
 import pygame
-from mc_simulator import MCSimulator
+from mc_simulator import MO_MCSimulator
+from rhea import MO_RHEA
 
 class GameLoop:
     @staticmethod
@@ -20,13 +21,39 @@ class GameLoop:
                 if event.type == pygame.KEYDOWN:
                     if agent1:
                         if event.key == pygame.K_SPACE:
-                            #print("Simulation Started.")      
+                            print("Triggered MO MC Simulator")
                             # Trigger Monte Carlo Simulation when space bar is pressed
-                            # repeat the steps below 10 times
-                            for _ in range(10):
-                                mc_simulator = MCSimulator(agent1, grid, simu_depth=100, time_limit=1, max_rollouts=4000000)
+                            # repeat the steps below x times
+                            for _ in range(1000):
+                                mc_simulator = MO_MCSimulator(agent1, grid, simu_depth=100, time_limit=0.1, max_rollouts=4000000)
                                 best_move, best_shift = mc_simulator.simulate()
-                                print((best_move, best_shift))
+                                #print((best_move, best_shift))
+                                #print(agent1.goal_row, agent1.goal_col)
+                                if agent1_mode == 'move':
+                                    agent1.move(best_move, grid)
+                                    agent1_mode = 'shift_obstacle'
+                                if agent1_mode == 'shift_obstacle':
+                                    agent1.shift_obstacle(best_shift, grid)
+                                    agent1_mode = 'move'
+                                best_move, best_shift = None, None 
+
+                                if (agent1.row == agent1.goal_row and agent1.goal_col == agent1.col):
+                                    print("Goal reached, now returning to home.")
+                                    agent1.goal_row, agent1.goal_col = agent1.home_row, agent1.home_col
+                                    if ((agent1.row, agent1.col) == (agent1.home_row, agent1.home_col)):
+                                        print("Goal Reached and Returned to Home.")
+                                        break        
+                                #update the screen with grid and agent
+                                grid_renderer.draw()
+                                agent1.draw(grid_renderer.screen, grid)
+                                pygame.display.flip()
+
+                        if event.key == pygame.K_r:
+                            print("Triggered MO RHEA")
+                            for _ in range(1):
+                                mo_rhea = MO_RHEA(agent1, grid, simu_depth=5, time_limit=1, max_rollouts=4000000)
+                                best_move, best_shift = mo_rhea.simulate()
+                                print(best_move, best_shift)
                                 if agent1_mode == 'move':
                                     agent1.move(best_move, grid)
                                     agent1_mode = 'shift_obstacle'
@@ -38,6 +65,7 @@ class GameLoop:
                                 grid_renderer.draw()
                                 agent1.draw(grid_renderer.screen, grid)
                                 pygame.display.flip()
+
                         if event.key in [pygame.K_w, pygame.K_s, pygame.K_a, pygame.K_d, pygame.K_q, pygame.K_e]:
                             if agent1_mode == 'move':
                                 # Handle the agent's movement

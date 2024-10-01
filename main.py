@@ -22,7 +22,7 @@ def start_game():
     agents = []
     for i in range(num_agents):
         row = 0  # Assign initial row position
-        col = i * 2  # Spread agents across the grid horizontally (just an example)
+        col = i * 2  # Spread agents across the grid horizontally
         agents.append(Agent(name=f"Agent {i+1}", row=row, col=col))
 
     # Start the game loop with the created grid, agents, and renderer

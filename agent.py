@@ -7,8 +7,10 @@ class Agent:
         self.name = name
         self.row = row  # Initial row position
         self.col = col  # Initial column position
-        self.goal_row = row
-        self.goal_col = col
+        self.goal_row = 9
+        self.goal_col = 16
+        self.home_row = 0
+        self.home_col = 0
         self.color = color
         self.radius = 15
         self.successful_shift = False
