@@ -40,3 +40,21 @@ class GridWorld:
     
     def is_valid_position(self, row, col):
         return 0 <= row < self.rows and 0 <= col < self.cols
+
+    def get_empty_cells(self):
+        # Loop through the grid and count the number of cells with weight == 0
+        empty_cells = 0
+        for row in self.grid:
+            for cell in row:
+                if cell['weight'] == 0:
+                    empty_cells += 1
+        return empty_cells
+    
+    def get_full_cells(self):
+        # Loop through the grid and count the number of cells with weight > 0
+        full_cells = 0
+        for row in self.grid:
+            for cell in row:
+                if cell['weight'] > 0:
+                    full_cells += 1
+        return full_cells
