@@ -1,5 +1,5 @@
-from mc_simulator import MO_MCSimulator
-from rhea import MO_RHEA
+from mcsim_agent import MO_MCSimulator
+from rhea_agent import MO_RHEA
 from agent import Agent
 from grid_world import GridWorld
 import multiprocessing

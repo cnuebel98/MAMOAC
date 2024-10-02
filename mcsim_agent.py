@@ -26,7 +26,7 @@ class MO_MCSimulator:
         self.list_of_first_actions = []
         self.fitness_of_first_actions = []
 
-    def simulate(self):
+    def mc_simulation(self):
         """
         Perform Monte Carlo simulations to determine the best move and obstacle shift.
         Returns:
@@ -261,4 +261,4 @@ class MO_MCSimulator:
             for cell in row:
                 if cell['weight'] > 0:
                     full_cells += 1
-        return (full_cells, weight_shifted, steps_taken)
+        return full_cells, weight_shifted, steps_taken

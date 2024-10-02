@@ -1,6 +1,7 @@
 import pygame
-from mc_simulator import MO_MCSimulator
-from rhea import MO_RHEA
+from mcsim_agent import MO_MCSimulator
+from rhea_agent import MO_RHEA
+from mcts_agent import MCTS_Agent
 
 class GameLoop:
     @staticmethod
@@ -24,7 +25,30 @@ class GameLoop:
                             running = False
 
                         if event.key == pygame.K_m:
-                            print("You pressed M, Congrats!")
+                            print("MCTS Started")
+                            for _ in range(1):
+                                mcts_agent = MCTS_Agent(agent1, grid)
+                                best_move, best_shift = mcts_agent.mcts_loop()
+                                
+                                if agent1_mode == 'move':
+                                    agent1.move(best_move, grid)
+                                    agent1_mode = 'shift_obstacle'
+                                if agent1_mode == 'shift_obstacle':
+                                    agent1.shift_obstacle(best_shift, grid)
+                                    agent1_mode = 'move'
+                                best_move, best_shift = None, None 
+
+                                if (agent1.row == agent1.goal_row and agent1.goal_col == agent1.col):
+                                    agent1.goal_row, agent1.goal_col = agent1.home_row, agent1.home_col
+                                    if ((agent1.row, agent1.col) == (agent1.home_row, agent1.home_col)):
+                                        #print("Goal Reached and Returned to Home.")
+                                        empty_cells = grid.get_empty_cells()
+                                        agent1.print_results(empty_cells)
+                                        break
+                                #update the screen with grid and agent
+                                grid_renderer.draw()
+                                agent1.draw(grid_renderer.screen, grid)
+                                pygame.display.flip()
 
                         if event.key == pygame.K_SPACE:
                             print("Triggered MO MC Simulator")
@@ -32,7 +56,7 @@ class GameLoop:
                             # repeat the steps below x times
                             for _ in range(1000):
                                 mc_simulator = MO_MCSimulator(agent1, grid, simu_depth=100, time_limit=0.1, max_rollouts=4000000)
-                                best_move, best_shift = mc_simulator.simulate()
+                                best_move, best_shift = mc_simulator.mc_simulation()
                                 
                                 if agent1_mode == 'move':
                                     agent1.move(best_move, grid)
