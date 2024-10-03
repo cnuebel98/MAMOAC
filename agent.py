@@ -32,13 +32,13 @@ class Agent:
             if grid.is_valid_position(self.row - 1, self.col):
                 self.row -= 1
                 self.successful_move = True
-            else: print("Movement direction not valid")
+            #else: print("Movement direction not valid")
 
         elif direction == "down":
             if grid.is_valid_position(self.row + 1, self.col):
                 self.row += 1
                 self.successful_move = True
-            else: print("Movement direction not valid")
+            #else: print("Movement direction not valid")
 
         elif direction == "top_left":
             if ((self.row % 2 == 1 and self.col % 2 == 1) 
@@ -46,7 +46,7 @@ class Agent:
                 if (grid.is_valid_position(self.row, self.col - 1)):
                     self.col -= 1
                     self.successful_move = True
-                else: print("Movement direction not valid")
+                #else: print("Movement direction not valid")
 
             elif ((self.row % 2 == 0 and self.col % 2 == 0)
                   or (self.row % 2 == 1 and self.col % 2 == 0)):
@@ -54,7 +54,7 @@ class Agent:
                     self.row -= 1
                     self.col -= 1
                     self.successful_move = True
-                else: print("Movement direction not valid")
+                #else: print("Movement direction not valid")
 
         elif direction == "top_right":
             if ((self.row % 2 == 1 and self.col % 2 == 1) 
@@ -62,7 +62,7 @@ class Agent:
                 if (grid.is_valid_position(self.row, self.col + 1)):
                     self.col += 1
                     self.successful_move = True
-                else: print("Movement direction not valid")
+                #else: print("Movement direction not valid")
 
             elif ((self.row % 2 == 0 and self.col % 2 == 0)
                   or (self.row % 2 == 1 and self.col % 2 == 0)):
@@ -70,7 +70,7 @@ class Agent:
                     self.row -= 1
                     self.col += 1
                     self.successful_move = True
-                else: print("Movement direction not valid")
+                #else: print("Movement direction not valid")
 
         elif direction == "bottom_right":
             if ((self.row % 2 == 1 and self.col % 2 == 1) 
@@ -79,14 +79,14 @@ class Agent:
                     self.col += 1
                     self.row += 1
                     self.successful_move = True
-                else: print("Movement direction not valid")
+                #else: print("Movement direction not valid")
 
             elif ((self.row % 2 == 0 and self.col % 2 == 0)
                   or (self.row % 2 == 1 and self.col % 2 == 0)):
                 if (grid.is_valid_position(self.row, self.col + 1)):
                     self.col += 1
                     self.successful_move = True
-                else: print("Movement direction not valid")
+                #else: print("Movement direction not valid")
 
         elif direction == "bottom_left":
             if ((self.row % 2 == 1 and self.col % 2 == 1) 
@@ -94,14 +94,14 @@ class Agent:
                 if (grid.is_valid_position(self.row + 1, self.col - 1)):
                     self.row += 1
                     self.col -= 1
-                else: print("Movement direction not valid")
+                #else: print("Movement direction not valid")
 
             elif ((self.row % 2 == 0 and self.col % 2 == 0)
                   or (self.row % 2 == 1 and self.col % 2 == 0)):
                 if (grid.is_valid_position(self.row, self.col-1)):
                     self.col -= 1
                     self.successful_move = True
-                else: print("Movement direction not valid")
+                #else: print("Movement direction not valid")
                 
         if self.successful_move:
             #print(f"Successful move to {direction}")
@@ -121,7 +121,7 @@ class Agent:
                 grid.grid[self.row][self.col]['weight'] = 0.0
                 self.successful_shift = True
                 target_cell = (self.row - 1, self.col)
-            else: print("shift direction not valid")
+            #else: print("shift direction not valid")
 
         elif direction == "down":
             if grid.is_valid_position(self.row + 1, self.col):
@@ -129,7 +129,7 @@ class Agent:
                 grid.grid[self.row][self.col]['weight'] = 0.0
                 self.successful_shift = True
                 target_cell = (self.row + 1, self.col)
-            else: print("shift direction not valid")
+            #else: print("shift direction not valid")
         
         elif direction == "top_left":
             if ((self.row % 2 == 1 and self.col % 2 == 1) 
@@ -139,7 +139,7 @@ class Agent:
                     grid.grid[self.row][self.col]['weight'] = 0.0
                     self.successful_shift = True
                     target_cell = (self.row, self.col - 1)
-                else: print("shift direction not valid")
+                #else: print("shift direction not valid")
 
             elif ((self.row % 2 == 0 and self.col % 2 == 0)
                   or (self.row % 2 == 1 and self.col % 2 == 0)):
@@ -148,7 +148,7 @@ class Agent:
                     grid.grid[self.row][self.col]['weight'] = 0.0
                     self.successful_shift = True
                     target_cell = (self.row - 1, self.col - 1)
-                else: print("shift direction not valid")
+                #else: print("shift direction not valid")
         
         elif direction == "top_right":
             if ((self.row % 2 == 1 and self.col % 2 == 1) 
@@ -158,7 +158,7 @@ class Agent:
                     grid.grid[self.row][self.col]['weight'] = 0.0
                     self.successful_shift = True
                     target_cell = (self.row, self.col + 1)
-                else: print("shift direction not valid")
+                #else: print("shift direction not valid")
 
             elif ((self.row % 2 == 0 and self.col % 2 == 0)
                   or (self.row % 2 == 1 and self.col % 2 == 0)):
@@ -167,7 +167,7 @@ class Agent:
                     grid.grid[self.row][self.col]['weight'] = 0.0
                     self.successful_shift = True
                     target_cell = (self.row - 1, self.col + 1)
-                else: print("shift direction not valid")
+                #else: print("shift direction not valid")
         
         elif direction == "bottom_left":
             if ((self.row % 2 == 1 and self.col % 2 == 1) 
@@ -177,7 +177,7 @@ class Agent:
                     grid.grid[self.row][self.col]['weight'] = 0.0
                     self.successful_shift = True
                     target_cell = (self.row + 1, self.col - 1)
-                else: print("shift direction not valid")
+                #else: print("shift direction not valid")
 
             elif ((self.row % 2 == 0 and self.col % 2 == 0)
                   or (self.row % 2 == 1 and self.col % 2 == 0)):
@@ -186,7 +186,7 @@ class Agent:
                     grid.grid[self.row][self.col]['weight'] = 0.0
                     self.successful_shift = True
                     target_cell = (self.row, self.col - 1)
-                else: print("shift direction not valid")
+                #else: print("shift direction not valid")
 
         elif direction == "bottom_right":
             if ((self.row % 2 == 1 and self.col % 2 == 1)
@@ -196,7 +196,7 @@ class Agent:
                     grid.grid[self.row][self.col]['weight'] = 0.0
                     self.successful_shift = True
                     target_cell = (self.row + 1, self.col + 1)
-                else: print("shift direction not valid")
+                #else: print("shift direction not valid")
 
             elif ((self.row % 2 == 0 and self.col % 2 == 0)
                   or (self.row % 2 == 1 and self.col % 2 == 0)):
@@ -205,7 +205,7 @@ class Agent:
                     grid.grid[self.row][self.col]['weight'] = 0.0
                     self.successful_shift = True
                     target_cell = (self.row, self.col + 1)
-                else: print("shift direction not valid")
+                #else: print("shift direction not valid")
 
         # spill mechnics
         if self.successful_shift:
