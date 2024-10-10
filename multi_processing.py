@@ -5,6 +5,7 @@ from grid_world import GridWorld
 import multiprocessing
 import pandas as pd
 import os
+from mcts_agent import MCTS_Agent
 
 def run_one_agent(agent_id):
     agent1_mode = 'move'  # Options: 'move', 'shift'
@@ -13,8 +14,9 @@ def run_one_agent(agent_id):
     running = True
 
     while running:
-        mc_simulator = MO_MCSimulator(agent1, grid, simu_depth=100, time_limit=0.1, max_rollouts=100000)
-        best_move, best_shift = mc_simulator.simulate()
+        agent = MO_MCSimulator(agent1, grid, simu_depth=100, time_limit=0.1, max_rollouts=100000)
+        #agent = MCTS_Agent(agent1, grid, simu_depth=40, num_simus=100, time_limit=1)
+        best_move, best_shift = agent.simulate()
         
         if agent1_mode == 'move':
             agent1.move(best_move, grid)
@@ -52,7 +54,6 @@ if __name__ == '__main__':
         df = pd.read_csv(f"results/{agent_name}_results.csv")
         all_results.append(df)
         os.remove(f"results/{agent_name}_results.csv")
-
 
     # Combine all results into a single DataFrame
     combined_results = pd.concat(all_results, ignore_index=True)

@@ -26,9 +26,9 @@ class GameLoop:
 
                         if event.key == pygame.K_m:
                             print("MCTS Started")
-                            for _ in range(1):
+                            for _ in range(1000):
                                 mcts_agent = MCTS_Agent(agent1, grid)
-                                best_move, best_shift = mcts_agent.mcts_loop()
+                                best_move, best_shift = mcts_agent.simulate()
                                 
                                 if agent1_mode == 'move':
                                     agent1.move(best_move, grid)
@@ -36,7 +36,7 @@ class GameLoop:
                                 if agent1_mode == 'shift_obstacle':
                                     agent1.shift_obstacle(best_shift, grid)
                                     agent1_mode = 'move'
-                                best_move, best_shift = None, None 
+                                best_move, best_shift = None, None
 
                                 if (agent1.row == agent1.goal_row and agent1.goal_col == agent1.col):
                                     agent1.goal_row, agent1.goal_col = agent1.home_row, agent1.home_col
@@ -54,9 +54,9 @@ class GameLoop:
                             print("Triggered MO MC Simulator")
                             # Trigger Monte Carlo Simulation when space bar is pressed
                             # repeat the steps below x times
-                            for _ in range(1000):
+                            for _ in range(50):
                                 mc_simulator = MO_MCSimulator(agent1, grid, simu_depth=100, time_limit=0.1, max_rollouts=4000000)
-                                best_move, best_shift = mc_simulator.mc_simulation()
+                                best_move, best_shift = mc_simulator.simulate()
                                 
                                 if agent1_mode == 'move':
                                     agent1.move(best_move, grid)

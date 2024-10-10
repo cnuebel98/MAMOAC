@@ -26,7 +26,7 @@ class MO_MCSimulator:
         self.list_of_first_actions = []
         self.fitness_of_first_actions = []
 
-    def mc_simulation(self):
+    def simulate(self):
         """
         Perform Monte Carlo simulations to determine the best move and obstacle shift.
         Returns:
@@ -44,7 +44,7 @@ class MO_MCSimulator:
             goal_reached = False
             returned_to_start = False
 
-            # Reset path and shift directions for the temporary agent
+            # Reset path and shift directions of the temporary agent
             temp_agent.path_directions = []
             temp_agent.shift_directions = []
             

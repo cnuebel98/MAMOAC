@@ -38,3 +38,33 @@ class HelperFunctions:
             if temp_grid.is_valid_position(current_cell[0] - 1, current_cell[1]):
                 directions.append("up")
         return directions
+    
+    def calculate_hypervolume(pareto_front, ref_point):
+        # Sort the Pareto front in descending order based on the first dimension
+        pareto_front = sorted(pareto_front, key=lambda x: x[0], reverse=True)
+        
+        # Initialize the hypervolume
+        hypervolume = 0.0
+        
+        # Initialize the previous point's coordinates for volume calculations
+        prev_point = ref_point  # Make sure to copy the reference point
+
+        for point in pareto_front:
+            # Calculate the volume contributed by the current point
+            volume = 1.0
+            #print(f"Point: {point}")
+            for i in range(len(ref_point)):
+                # Calculate the contribution along each dimension
+                if point[i] < prev_point[i]:
+                    volume *= (prev_point[i] - point[i])
+                else:
+                    volume *= (prev_point[i] - ref_point[i])
+                    break
+
+            # Add the volume contribution to the total hypervolume
+            hypervolume += volume
+
+            # Update the previous point to the current one for the next iteration
+            prev_point = point
+
+        return hypervolume
