@@ -68,3 +68,21 @@ class HelperFunctions:
             prev_point = point
 
         return hypervolume
+
+    def getParetoDominance(valueList1: list, valueList2: list):
+        """Returns pareto dominance in the form of boolean (True -> point1 dominates point2)."""
+
+        #Check if points have same dimensions
+        if len(valueList1) != len(valueList2):
+            ValueError(f"The points do not have the same dimensions. Point 1: {len(valueList1)}, Point 2: {len(valueList2)}")
+        
+        betterInOne = False
+        #Berry nice check for pareto dominance 
+        for a, b in zip(valueList1, valueList2):
+            if a > b:
+                #print(f"{valueList1} does not dominate {valueList2}")
+                return False
+            elif a < b:
+                betterInOne = True
+
+        return betterInOne

@@ -23,6 +23,8 @@ class Agent:
         self.path_directions = []
         self.shift_directions = []
         self.results = []
+        self.fullCells = 0
+        self.dominationCount = 0 #Please ignore, this is just for NSGA2 to determine fronts
 
     def move(self, direction, grid):
         self.move_count_f1 += 1
