@@ -4,6 +4,7 @@ from agent import Agent
 from grid_world import GridWorld
 from game_loop import GameLoop
 from renderer import Renderer
+from nsga2 import NSGA2
 
 # Variables for grid size and number of agents
 grid_size = [10, 17]  # Default grid size (rows, cols)
@@ -80,4 +81,5 @@ def main():
         pygame.display.flip()
 
 if __name__ == "__main__":
-    main()
+    #main()
+    nsga2 = NSGA2.__new__(NSGA2).__init__()
