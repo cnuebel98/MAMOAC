@@ -119,6 +119,11 @@ class NSGA2():
         f2Sorted.sort(key= lambda x: x.weight_shifted_f2)
         f3Sorted = deepcopy(front)
         f3Sorted.sort(key= lambda x: x.fullCells)
+        #print(len(f1Sorted))
+        #print(len(f2Sorted))
+        #print(len(f3Sorted))
+
+
 
         #Now that we have sorted for each objective we can identify the nearest neighbors per objective
         for agent in front:
@@ -149,10 +154,10 @@ class NSGA2():
                 #                    (f2Sorted[nearestNeighf1[1]].weight_shifted_f2 - f2Sorted[nearestNeighf1[0]].weight_shifted_f2)/(f2Sorted[-1].weight_shifted_f2 - (f2Sorted[0].weight_shifted_f2))+
                 #                    (f3Sorted[nearestNeighf1[1]].fullCells - f3Sorted[nearestNeighf1[0]].fullCells)/(f3Sorted[-1].fullCells - (f3Sorted[0].fullCells)))
                 agent.crowdiDist = ((f1Sorted[nearestNeighf1[1]].move_count_f1 - f1Sorted[nearestNeighf1[0]].move_count_f1)+
-                                    (f2Sorted[nearestNeighf1[1]].weight_shifted_f2 - f2Sorted[nearestNeighf1[0]].weight_shifted_f2)+
-                                    (f3Sorted[nearestNeighf1[1]].fullCells - f3Sorted[nearestNeighf1[0]].fullCells))
+                                    (f2Sorted[nearestNeighf2[1]].weight_shifted_f2 - f2Sorted[nearestNeighf2[0]].weight_shifted_f2)+
+                                    (f3Sorted[nearestNeighf3[1]].fullCells - f3Sorted[nearestNeighf3[0]].fullCells))
             
-            print(agent.crowdiDist)
+            #print(agent.crowdiDist)
 
     def mainLoop(self):
         """Main loop of NSGA2 """
