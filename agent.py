@@ -25,6 +25,11 @@ class Agent:
         self.results = []
         self.fullCells = 0
         self.dominationCount = 0 #Please ignore, this is just for NSGA2 to determine fronts
+        self.crowdiDist = 0 #Same here (just pleasant to have it here)
+
+    def __eq__(self, agent) -> bool:
+        #Pretty shitty statement
+        return self.path_directions == agent.path_directions and self.shift_directions == agent.shift_directions and self.move_count_f1 == agent.move_count_f1 and self.weight_shifted_f2 == agent.weight_shifted_f2 and self.fullCells == agent.fullCells
 
     def move(self, direction, grid):
         self.move_count_f1 += 1

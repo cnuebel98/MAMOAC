@@ -30,7 +30,11 @@ class NSGA2():
             self.evaluate(self.agents[x])
 
         #Build fronts
-        self.getFronts()
+        fronts = self.getFronts()
+        
+        #Get CD for fronts
+        for front in fronts:
+            self.calcCrowdingDistance(front)
         
 
 
@@ -64,7 +68,6 @@ class NSGA2():
                     goalReached = True
         agent.fullCells = tmpGrid.get_full_cells()
 
-
     def nothingCrossover(self, parent1: Agent, parent2: Agent) -> tuple[Agent, Agent]:
         """Just for testing purposes, does nothing."""
         return parent1, parent2
@@ -95,7 +98,6 @@ class NSGA2():
         
         self.agents.sort(key=lambda agent: agent.dominationCount)
 
-
         for agent in self.agents:
             if len(fronts) != 0:
                 if fronts[-1][0].dominationCount == agent.dominationCount:
@@ -105,10 +107,52 @@ class NSGA2():
 
             else:
                 fronts.append([agent])
+
+        return fronts
+
+    def calcCrowdingDistance(self, front: list[Agent]):
+        """Calculates the crowding distances for a given front."""
+        #Firstly sort the pop by each objective (not pretty but does what it should)
+        f1Sorted = deepcopy(front)
+        f1Sorted.sort(key= lambda x: x.move_count_f1)
+        f2Sorted = deepcopy(front)
+        f2Sorted.sort(key= lambda x: x.weight_shifted_f2)
+        f3Sorted = deepcopy(front)
+        f3Sorted.sort(key= lambda x: x.fullCells)
+
+        #Now that we have sorted for each objective we can identify the nearest neighbors per objective
+        for agent in front:
+            nearestNeighf1 = []
+            nearestNeighf2 = []
+            nearestNeighf3 = []
+            for x in range(len(f1Sorted)):
+                if f1Sorted[x] == agent:
+                    if x > 0 and x < len(f1Sorted):
+                        nearestNeighf1.append(x-1)
+                        nearestNeighf1.append(x+1)
+                if f2Sorted[x] == agent:
+                    if x > 0 and x < len(f2Sorted):
+                        nearestNeighf2.append(x-1)
+                        nearestNeighf2.append(x+1)
+                if f3Sorted[x] == agent:
+                    if x > 0 and x < len(f3Sorted):
+                        nearestNeighf3.append(x-1)
+                        nearestNeighf3.append(x+1)
         
-        print(fronts)
-        print(len(self.agents))
-                 
+            #If one of these is empty, we set the CD to infinity
+            if len(nearestNeighf1) != 2 or len(nearestNeighf2) != 2 or len(nearestNeighf3) != 2:
+                print("Found edge case")
+                agent.crowdiDist = -1 #-1 is here a replacement for infinity since the CD can never be negative
+            else:
+                #This looks a bit messy but here we calc the CD for each objective and sum it up
+                #agent.crowdiDist = ((f1Sorted[nearestNeighf1[1]].move_count_f1 - f1Sorted[nearestNeighf1[0]].move_count_f1)/(f1Sorted[-1].move_count_f1 - (f1Sorted[0].move_count_f1))+
+                #                    (f2Sorted[nearestNeighf1[1]].weight_shifted_f2 - f2Sorted[nearestNeighf1[0]].weight_shifted_f2)/(f2Sorted[-1].weight_shifted_f2 - (f2Sorted[0].weight_shifted_f2))+
+                #                    (f3Sorted[nearestNeighf1[1]].fullCells - f3Sorted[nearestNeighf1[0]].fullCells)/(f3Sorted[-1].fullCells - (f3Sorted[0].fullCells)))
+                agent.crowdiDist = ((f1Sorted[nearestNeighf1[1]].move_count_f1 - f1Sorted[nearestNeighf1[0]].move_count_f1)+
+                                    (f2Sorted[nearestNeighf1[1]].weight_shifted_f2 - f2Sorted[nearestNeighf1[0]].weight_shifted_f2)+
+                                    (f3Sorted[nearestNeighf1[1]].fullCells - f3Sorted[nearestNeighf1[0]].fullCells))
+            
+            print(agent.crowdiDist)
 
     def mainLoop(self):
         """Main loop of NSGA2 """
