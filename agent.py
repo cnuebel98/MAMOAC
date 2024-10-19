@@ -26,6 +26,8 @@ class Agent:
         self.fullCells = 0
         self.dominationCount = 0 #Please ignore, this is just for NSGA2 to determine fronts
         self.crowdiDist = 0 #Same here (just pleasant to have it here)
+        self.reachedHome = False
+        self.reachedGoal = False
 
     def __eq__(self, agent) -> bool:
         #Pretty shitty statement
