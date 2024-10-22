@@ -26,7 +26,7 @@ class MO_MCSimulator:
         self.list_of_first_actions = []
         self.fitness_of_first_actions = []
 
-    def simulate(self):
+    def get_action(self):
         """
         Perform Monte Carlo simulations to determine the best move and obstacle shift.
         Returns:

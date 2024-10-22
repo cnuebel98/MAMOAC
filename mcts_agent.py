@@ -45,14 +45,14 @@ class Node:
         return child_node
 
 class MCTS_Agent:
-    def __init__(self, agent, grid, simu_depth=100, num_simus=100, time_limit=0.5):
+    def __init__(self, agent, grid, simu_depth=100, num_simus=20, time_limit=0.5):
         self.agent = agent
         self.grid = grid
         self.simu_depth = simu_depth
         self.num_simus = num_simus
         self.time_limit = time_limit
 
-    def simulate(self):
+    def get_action(self):
         start_time = time.time()
         budget_left = True
         best_move, best_shift = None, None
@@ -63,26 +63,29 @@ class MCTS_Agent:
         root.pareto_fitness.clear()
         
         node = root
-
         
-        while budget_left:
+        while True:
             # reset node to root node after each iteration
             node = root
 
             if time.time() - start_time > self.time_limit:
-                budget_left = False
+                break
             
             possible_actions = node.get_legal_actions()
+            #print(f"possible actions: {possible_actions}")
 
             # 1. Selection Phase: Traverse the Tree to a leaf 
             # node using the tree policy
             while node.is_fully_expanded() and node.children:
                 #print("1. Selection phase")
                 for child in node.children:
+                    #print("Traversed to child node")
                     child.ucb = self.ucb_value(node, child)
                 i = np.argmax([child.ucb for child in node.children])
+                
+                # For Random Selection Phase:
                 # i = random.randint(0, len(node.children)-1)
-                #print(i)
+                
                 node = node.children[i]
 
             # 2. Expansion phase: add a new child node to the tree
@@ -110,7 +113,9 @@ class MCTS_Agent:
                 
             # 3. Simulation phase: Simulate the game from the new node
             fitness = self.simulation_phase(expansion_node)
-
+            
+            fitness = self.get_non_dom_solutions(fitness)
+            
             # 4. Backpropagation phase: Update visit count and fitness
             self.backpropagate(expansion_node, fitness)
 
@@ -118,6 +123,27 @@ class MCTS_Agent:
 
         return best_move, best_shift
     
+    def get_non_dom_solutions(self, fitness):
+        '''takes a set of solutions and returns a front with 
+        only the non-dominated fitness values'''
+        #print(f"Fitness before: {fitness}")
+        #print(len(fitness))
+        #print(fitness[0][1])
+        if len(fitness) > 1:
+            to_remove = set()
+            for i in range(len(fitness)):
+                for j in range(len(fitness)):
+                    if i != j:
+                        if all(fitness[i][k] <= fitness[j][k] for k in range(3)) and any(fitness[i][k] < fitness[j][k] for k in range(3)):
+                            to_remove.add(j)
+            # Remove elements in reverse order based on their indices
+            for index in sorted(to_remove, reverse=True):
+                fitness.pop(index)
+
+        else: print("Len of fitness in get non dom sol is 1 or 0")
+        #print(f"Fitness after: {fitness}")
+        return fitness
+
     def ucb_value(self, parent, child):
         '''Calculate the UCB value for a child node'''
         # UCB = Q + C * sqrt(ln(N) / n)
@@ -130,6 +156,7 @@ class MCTS_Agent:
         N = parent.visits
         n = child.visits
         ucb = Q + C * np.sqrt(np.log(N) / n)
+        print(ucb)
         return ucb
 
     def simulation_phase(self, expansion_node):
@@ -151,6 +178,8 @@ class MCTS_Agent:
             #print(f"Goal: {temp_agent_copy.goal_row, temp_agent_copy.goal_col}")
 
             for _ in range(self.simu_depth):
+                #print(f"Temp_agentCopy goal: {temp_agent_copy.goal_row, temp_agent_copy.goal_col}")
+                #print(f"tempagent goal: {temp_agent.goal_row, temp_agent.goal_col}")
                 # Get all legal actions
                 possible_actions = node.get_legal_actions()
                 # Choose a random action
@@ -163,58 +192,38 @@ class MCTS_Agent:
 
                 # Check if goal is reached and returned to home
                 # Set a variable to true if goal is reached
-                if ((temp_agent_copy.row, temp_agent_copy.col) 
-                    == (temp_agent_copy.goal_row, temp_agent_copy.goal_col) 
-                    and goal_reached == False):
-                    #print("Goal Reached in a rollout, still have to return to home!")
+                if ((temp_agent_copy.row, temp_agent_copy.col) == (temp_agent_copy.goal_row, temp_agent_copy.goal_col)) and goal_reached == False:
+                    temp_agent_copy.goal_row, temp_agent_copy.goal_col = temp_agent_copy.home_row, temp_agent_copy.home_col
                     goal_reached = True
-                    
-                if ((temp_agent_copy.row, temp_agent_copy.col) 
-                    == (temp_agent_copy.home_row, temp_agent_copy.home_row) 
-                    and goal_reached == True
-                    and returned_to_home == False):
-                    #print("Returned to home in a rollout after collecting the goal!")
+                if ((temp_agent_copy.row, temp_agent_copy.col) == (temp_agent_copy.goal_row, temp_agent_copy.goal_col)) and goal_reached == True:
+                    #print("Goal Reached and Returned to Home.")
                     returned_to_home = True
                     
-                
             # Calculate fitness values
             # If Goal Reached is True, then substract from the fitness
             full_cells = temp_grid_copy.get_full_cells()
             steps_taken = temp_agent_copy.move_count_f1
             weight_shifted = temp_agent_copy.weight_shifted_f2
 
-            if ((goal_reached == False) and (returned_to_home == False)):
-                #print("Goal not reached and not returned to home")
-                full_cells = full_cells * 1.5
-                steps_taken = steps_taken * 1.5
-                weight_shifted = weight_shifted * 1.5
-
-            if ((goal_reached == True) and (returned_to_home == False)):
-                #print("Goal Reached but not returned to home")
-                full_cells = full_cells * 0.5
-                steps_taken = steps_taken * 0.5
-                weight_shifted = weight_shifted * 0.5
-            if ((goal_reached == True) and (returned_to_home == True)):
-                #print("Goal Reached and returned to home")
-                full_cells = full_cells * 0.1
-                steps_taken = steps_taken * 0.1
-                weight_shifted = weight_shifted * 0.1
-            goal_reached = False
-            returned_to_home = False
+            if (goal_reached == True) and (returned_to_home == False):
+                full_cells = full_cells/2
+                steps_taken = steps_taken/2
+                weight_shifted = weight_shifted/2
+            elif returned_to_home == True:
+                full_cells = full_cells/10
+                steps_taken = steps_taken/10
+                weight_shifted = weight_shifted/10
+            
             fitness_values.append((full_cells, steps_taken, weight_shifted))
             
         return fitness_values
     
     def backpropagate(self, node, fitness):
         """Update the node's statistics based on the result."""
+        #print("4. Backpropagation phase")
         while node is not None:
             node.visits += 1
-            # only append fitness value to childs 
-            # pareto_fitness if the new value is not dominated
-            
-            # TODO if self.is_non_dominated(fitness, node.pareto_fitness):
             node.pareto_fitness.append(fitness)
-
             #print(f"node pareto fitness: {node.pareto_fitness}")
             node = node.parent
 
@@ -242,6 +251,11 @@ class MCTS_Agent:
         
         # select the child with the highest hypervolume
         best_child = max(root.children, key=lambda x: x.hypervolume)
+        #print(f"root children pareto fitness: {[child.pareto_fitness for child in root.children]}")
+        print(f"root childrens hypervolume: {[child.hypervolume for child in root.children]}")
+        print(f"best child hypervolume: {best_child.hypervolume}")
+        #print(f"best child pareto fitness: {best_child.pareto_fitness}")
+        print(best_child.action)
         best_move, best_shift = best_child.action[0], best_child.action[1]
         return best_move, best_shift
 
@@ -256,7 +270,6 @@ class MCTS_Agent:
         #self.plot_pareto_front(pareto_front, ref_point)
         hypervolume = HelperFunctions.calculate_hypervolume(pareto_front, ref_point)
         node.hypervolume = hypervolume
-
 
     def get_ref_point(self, solutions):
         '''Returns the reference point of a number of solutions'''

@@ -28,8 +28,8 @@ class GameLoop:
                             print("MCTS Started")
                             for _ in range(1000):
                                 mcts_agent = MCTS_Agent(agent1, grid)
-                                best_move, best_shift = mcts_agent.simulate()
-                                
+                                best_move, best_shift = mcts_agent.get_action()
+                                #print(f"Goal right now: {agent1.goal_row, agent1.goal_col}")
                                 if agent1_mode == 'move':
                                     agent1.move(best_move, grid)
                                     agent1_mode = 'shift_obstacle'
@@ -39,11 +39,13 @@ class GameLoop:
                                 best_move, best_shift = None, None
 
                                 if (agent1.row == agent1.goal_row and agent1.goal_col == agent1.col):
+                                    print("Goal collected")
                                     agent1.goal_row, agent1.goal_col = agent1.home_row, agent1.home_col
                                     if ((agent1.row, agent1.col) == (agent1.home_row, agent1.home_col)):
                                         #print("Goal Reached and Returned to Home.")
                                         empty_cells = grid.get_empty_cells()
                                         agent1.print_results(empty_cells)
+                                        print("Returned to Home")
                                         break
                                 #update the screen with grid and agent
                                 grid_renderer.draw()
@@ -54,9 +56,9 @@ class GameLoop:
                             print("Triggered MO MC Simulator")
                             # Trigger Monte Carlo Simulation when space bar is pressed
                             # repeat the steps below x times
-                            for _ in range(50):
+                            for _ in range(1000):
                                 mc_simulator = MO_MCSimulator(agent1, grid, simu_depth=100, time_limit=0.1, max_rollouts=4000000)
-                                best_move, best_shift = mc_simulator.simulate()
+                                best_move, best_shift = mc_simulator.get_action()
                                 
                                 if agent1_mode == 'move':
                                     agent1.move(best_move, grid)
