@@ -65,6 +65,7 @@ class NSGA2():
 
     def nothingCrossover(self, parent1: Agent, parent2: Agent) -> Agent:
         """Just for testing purposes, does nothing."""
+        #Deepcopy here makes this slow I suppose
         return deepcopy(parent1)
     
     def nothingMutation(self, baseAgent: Agent) -> Agent:
@@ -73,8 +74,7 @@ class NSGA2():
 
     def evaluate(self, agent: Agent, gird:GridWorld) -> None:
         """Evaluate function for an agent."""
-        goalReached = False
-        homeReached = False
+        #Deepcopying for every agent is slow (multiprocessing might be way to go)
         tmpGrid = deepcopy(gird)
         for x in range(len(agent.path_directions)):
             agent.move(agent.path_directions[x], tmpGrid)
@@ -90,11 +90,11 @@ class NSGA2():
             dominationCounter = 0
             for j in range(len(self.agents)):
                 if i != j:
-                  #Prepare value lists
-                  valueList1 = [self.agents[i].move_count_f1, self.agents[i].weight_shifted_f2, self.agents[i].fullCells]
-                  valueList2 = [self.agents[j].move_count_f1, self.agents[j].weight_shifted_f2, self.agents[j].fullCells]
-                  if HelperFunctions.getParetoDominance(valueList2, valueList1): #we check if the point we test against gets dominated (in this case i)
-                      dominationCounter+=1
+                    #Prepare value lists
+                    valueList1 = [self.agents[i].move_count_f1, self.agents[i].weight_shifted_f2, self.agents[i].fullCells]
+                    valueList2 = [self.agents[j].move_count_f1, self.agents[j].weight_shifted_f2, self.agents[j].fullCells]
+                    if HelperFunctions.getParetoDominance(valueList2, valueList1): #we check if the point we test against gets dominated (in this case i)
+                        dominationCounter+=1
             self.agents[i].dominationCount = dominationCounter
         
         self.agents.sort(key=lambda agent: agent.dominationCount)
@@ -123,7 +123,7 @@ class NSGA2():
         fig = plt.figure()
         ax = fig.add_subplot(111, projection='3d')
 
-         # Iterate over each sublist in 'data' and assign a different color
+        # Iterate over each sublist in 'data' and assign a different color
         for i, sublist in enumerate(data):
             x_vals = [point[0] for point in sublist]
             y_vals = [point[1] for point in sublist]
@@ -150,6 +150,7 @@ class NSGA2():
     def calcCrowdingDistance(self, front: list[Agent]):
         """Calculates the crowding distances for a given front."""
         #Sort for each objective and identify the nearest neighbors per objective
+        #TODO: Look for better alternatives, worst case here is O(n)
         for agent in front:
             nearestNeighf1 = []
             nearestNeighf2 = []
