@@ -2,6 +2,7 @@ import pygame
 import random
 import copy
 import pandas as pd
+from grid_world import GridWorld
 
 class Agent:
     def __init__(self, name, row=0, col=0, color=(0, 0, 0)):
@@ -22,6 +23,7 @@ class Agent:
         self.weight_shifted_f2 = 0
         self.path_directions = []
         self.shift_directions = []
+        self.encoded_path = []
         self.results = []
         self.fullCells = 0
         self.dominationCount = 0 #Please ignore, this is just for NSGA2 to determine fronts
@@ -46,6 +48,7 @@ class Agent:
         elif direction == "down":
             if grid.is_valid_position(self.row + 1, self.col):
                 self.row += 1
+
                 self.successful_move = True
             #else: print("Movement direction not valid")
 
@@ -112,15 +115,18 @@ class Agent:
                     self.successful_move = True
                 #else: print("Movement direction not valid")
                 
+                
         if self.successful_move:
             #print(f"Successful move to {direction}")
+            # Append move to encoded path
+            self.encoded_path.append([(self.row, self.col)])
             self.append_to_path(direction)
             self.next_weigth_to_move = grid.grid[self.row][self.col]['weight']
             
             if self.next_weigth_to_move == 0:
                 self.append_to_shift("no_weight_to_shift")
 
-    def shift_obstacle(self, direction, grid):
+    def shift_obstacle(self, direction, grid: GridWorld):
         #print(f"Agent {self.name} is trying to shift the obstacle to {direction}")
         self.successful_shift = False
         target_cell = (0, 0)
@@ -215,6 +221,14 @@ class Agent:
                     self.successful_shift = True
                     target_cell = (self.row, self.col + 1)
                 #else: print("shift direction not valid")
+
+        #TODO: Check if shift is necessary, if not make shifting coordinates null or (-1, -1)
+        if self.successful_shift and len(self.encoded_path[-1]) == 1:
+            if self.next_weigth_to_move == 0: #If there is nothing in the cell we do not have to shift
+                self.encoded_path[-1].append((None, None))
+            else:
+                self.encoded_path[-1].append(target_cell)  
+
 
         # spill mechnics
         if self.successful_shift:

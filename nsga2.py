@@ -259,5 +259,5 @@ class NSGA2():
 
             #Only keep selected parents as pop
             self.agents = parents
-
+            print(f"Encoded Path: {self.agents[0].encoded_path}")
             print(f"Evaluations: {self.evalCounter}")
