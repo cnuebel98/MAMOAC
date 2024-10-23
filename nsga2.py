@@ -8,13 +8,13 @@ from mpl_toolkits.mplot3d import Axes3D
 import numpy as np
 class NSGA2():
     #Variables
-    popSize = 100
-    n_eval = 1000
+    popSize = 1000
+    n_eval = 10000
     agents: list[Agent] = []
     mutProb = 0.1 #Mutation probability
     crossProb = 0.1 #Crossover probability
     evalCounter = 0
-    numberOfParents = 50
+    numberOfParents = 500
 
     def __init__(self) -> None:
         """Init method creates grid world and prepares agents for the algorithm."""
@@ -32,35 +32,37 @@ class NSGA2():
             self.samplePath(self.agents[x], self.grid)
             #While sampling we already evaluate so we manually change the counter
             self.evalCounter += 1
-        
+
         self.mainLoop()
             
     def samplePath(self, agent: Agent, grid: GridWorld) -> None:
         """Samples a path for a newly created agent randomly if needed."""
-        #Both those variables should be in the agent class TODO: Change later
-
         #Make copy of grid
         tmpGrid = deepcopy(grid)
 
-        while not agent.reachedGoal and not agent.reachedHome:
-            #While we did not visit the goal AND the home
+        while True:
+            #While will be broken by reaching home after reaching the goal
             #Get walking direction
-            walkingDirection = random.choice(HelperFunctions.get_possible_directions((agent.row, agent.col), temp_grid=tmpGrid))
-            agent.append_to_path(walkingDirection)
-            agent.move(walkingDirection, tmpGrid)
+            walkingDirection = random.choice(HelperFunctions.getPossibleDirectionCoords((agent.row, agent.col), temp_grid=tmpGrid))
+            agent.moveCoords(walkingDirection, tmpGrid)
 
             #Get shift
-            shiftingDirection = random.choice(HelperFunctions.get_possible_directions((agent.row, agent.col), temp_grid=tmpGrid))
-            agent.append_to_shift(shiftingDirection)
-            agent.shift_obstacle(shiftingDirection, tmpGrid)
+            shiftingDirection = random.choice(HelperFunctions.getPossibleDirectionCoords((agent.row, agent.col), temp_grid=tmpGrid))
+            agent.shiftCoords(shiftingDirection, tmpGrid)
+            
+            #Append walking direction and shifting direction to agents encoded path
+            agent.encoded_path.append([walkingDirection, shiftingDirection])
 
             #Checks if goal or home was visited
             if agent.reachedGoal:
                 if agent.row == agent.home_row and agent.col == agent.home_col:
                     agent.reachedHome = True
+                    break
             else:
                 if agent.row == agent.goal_row and agent.col == agent.goal_col:
                     agent.reachedGoal = True
+
+        agent.move_count_f1 = len(agent.encoded_path)
         agent.fullCells = tmpGrid.get_full_cells()
 
     def nothingCrossover(self, parent1: Agent, parent2: Agent) -> Agent:
@@ -72,14 +74,17 @@ class NSGA2():
         """Just for testing purposes, does nothing."""
         return baseAgent #we use deepcopy here since we dont want to have a pointer to the original instead of a new object
 
-    def evaluate(self, agent: Agent, gird:GridWorld) -> None:
+    def evaluate(self, agent: Agent, grid:GridWorld) -> None:
         """Evaluate function for an agent."""
         #Deepcopying for every agent is slow (multiprocessing might be way to go)
-        tmpGrid = deepcopy(gird)
-        for x in range(len(agent.path_directions)):
-            agent.move(agent.path_directions[x], tmpGrid)
-            agent.shift_obstacle(agent.shift_directions[x], tmpGrid)
+        tmpGrid = deepcopy(grid)
+        for x in range(len(agent.encoded_path)):
+            agent.moveCoords(agent.encoded_path[x][0], tmpGrid)
+            agent.shiftCoords(agent.encoded_path[x][1], tmpGrid)
 
+        agent.move_count_f1 = len(agent.encoded_path)
+        agent.fullCells = tmpGrid.get_full_cells()
+        #print(f"F1: {agent.move_count_f1}, F2: {agent.weight_shifted_f2}, F3: {agent.fullCells}")
         self.evalCounter += 1
 
     def getFronts_old(self):
@@ -135,7 +140,7 @@ class NSGA2():
             fronts.append([agent for agent in tmpAgents if agent.dominationCount == 0]) #We append a list of all non dom individuals to the fronts
             tmpAgents = [agent for agent in tmpAgents if agent.dominationCount != 0] #We keep only dominated agents in the tmpAgents list
 
-        if False:
+        if True:
             self.showFront(fronts)
         
         return fronts
@@ -257,7 +262,6 @@ class NSGA2():
             fronts = self.getFronts()
             if self.evalCounter == 500 or self.evalCounter == 950 :
                 self.showFront(fronts)
-            
         
             #Get CD for fronts
             for front in fronts:

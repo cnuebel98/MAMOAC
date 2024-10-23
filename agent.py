@@ -35,7 +35,7 @@ class Agent:
         #Pretty shitty statement
         return self.path_directions == agent.path_directions and self.shift_directions == agent.shift_directions and self.move_count_f1 == agent.move_count_f1 and self.weight_shifted_f2 == agent.weight_shifted_f2 and self.fullCells == agent.fullCells
 
-    def move(self, direction, grid):
+    def move(self, direction, grid:GridWorld):
         self.move_count_f1 += 1
         # Movement logic for hexagonal grid with 6 directions
         self.successful_move = False
@@ -125,6 +125,22 @@ class Agent:
             
             if self.next_weigth_to_move == 0:
                 self.append_to_shift("no_weight_to_shift")
+
+    def moveCoords(self, direction: tuple[int, int], grid:GridWorld):
+        """Moves the agent using the coordinate encoding."""
+        #print(f"Trying to move from {(self.row, self.col)} to {direction}")
+        # Movement logic for hexagonal grid with 6 directions
+        self.successful_move = False
+
+        if (grid.is_valid_position(direction[0], direction[1])):
+            self.row = direction[0]
+            self.col = direction[1]
+            self.next_weigth_to_move = grid.grid[self.row][self.col]['weight']
+            self.successful_move = True
+            #print(f"Move should have been executed, pos is now {(self.row, self.col)}")
+        else:
+            print("TRIED TO MAKE AN INVALID MOVE")
+            exit()
 
     def shift_obstacle(self, direction, grid: GridWorld):
         #print(f"Agent {self.name} is trying to shift the obstacle to {direction}")
@@ -297,6 +313,84 @@ class Agent:
                 weight_per_neighbor = round(weight_to_spill / count_neighbors_to_spill_on, 2)
                 for neighbor in neighbors_to_spill_on:
                     if neighbor == target_cell:
+                        grid.grid[neighbor[0]][neighbor[1]]['weight'] = weight_per_neighbor
+                    else:
+                        grid.grid[neighbor[0]][neighbor[1]]['weight'] = round(grid.grid[neighbor[0]][neighbor[1]]['weight'] + weight_per_neighbor, 2)
+
+    def shiftCoords(self, targetCell: tuple[int, int], grid:GridWorld):
+        self.successful_shift = False
+        if grid.grid[self.row][self.col]['weight'] != 0:
+            grid.grid[targetCell[0]][targetCell[1]]['weight'] = round(grid.grid[targetCell[0]][targetCell[1]]['weight'] + grid.grid[targetCell[0]][targetCell[1]]['weight'], 2)
+            grid.grid[self.row][self.col]['weight'] = 0.0
+            self.successful_shift = True
+
+        # spill mechnics
+        if self.successful_shift:
+            self.weight_shifted_f2 = round(self.weight_shifted_f2 + self.next_weigth_to_move, 2)
+
+            spill_probability = grid.grid[targetCell[0]][targetCell[1]]['weight']
+            #print(f"Spill prob: {spill_probability}, max weight till spill: {self.max_weight_till_spill}")
+            if self.max_weight_till_spill < spill_probability:
+                # how to access all neighbors of target cell
+                weight_to_spill = spill_probability
+                count_neighbors_to_spill_on = 0
+                neighbors_to_spill_on = []
+                # the neighbors are adressed differently depending on the row and col of the target cell
+                # row odd, col even or even and even
+                if ((targetCell[0] % 2 == 1 and targetCell[1] % 2 == 0)
+                    or (targetCell[0] % 2 == 0 and targetCell[1] % 2 == 0)):
+                    # check all 7 possible cells for validity
+                    if grid.is_valid_position(targetCell[0], targetCell[1]):
+                        count_neighbors_to_spill_on += 1
+                        neighbors_to_spill_on.append((targetCell[0], targetCell[1]))
+                    if grid.is_valid_position(targetCell[0], targetCell[1] + 1):
+                        count_neighbors_to_spill_on += 1
+                        neighbors_to_spill_on.append((targetCell[0], targetCell[1] + 1))
+                    if grid.is_valid_position(targetCell[0] - 1, targetCell[1]):
+                        count_neighbors_to_spill_on += 1
+                        neighbors_to_spill_on.append((targetCell[0] - 1, targetCell[1]))
+                    if grid.is_valid_position(targetCell[0] + 1, targetCell[1]):
+                        count_neighbors_to_spill_on += 1
+                        neighbors_to_spill_on.append((targetCell[0] + 1, targetCell[1]))
+                    if grid.is_valid_position(targetCell[0], targetCell[1] - 1):
+                        count_neighbors_to_spill_on += 1
+                        neighbors_to_spill_on.append((targetCell[0], targetCell[1] - 1))
+                    if grid.is_valid_position(targetCell[0] - 1, targetCell[1] + 1):
+                        count_neighbors_to_spill_on += 1
+                        neighbors_to_spill_on.append((targetCell[0] - 1, targetCell[1] + 1))
+                    if grid.is_valid_position(targetCell[0] - 1, targetCell[1] - 1):
+                        count_neighbors_to_spill_on += 1
+                        neighbors_to_spill_on.append((targetCell[0] - 1, targetCell[1] - 1))
+
+                # row even col odd or odd and odd
+                elif((targetCell[0] % 2 == 0 and targetCell[1] % 2 == 1)
+                    or (targetCell[0] % 2 == 1 and targetCell[1] % 2 == 1)):
+                    # check all 7 possible cells for validity
+                    if grid.is_valid_position(targetCell[0], targetCell[1]):
+                        count_neighbors_to_spill_on += 1
+                        neighbors_to_spill_on.append((targetCell[0], targetCell[1]))
+                    if grid.is_valid_position(targetCell[0] + 1, targetCell[1]):
+                        count_neighbors_to_spill_on += 1
+                        neighbors_to_spill_on.append((targetCell[0] + 1, targetCell[1]))
+                    if grid.is_valid_position(targetCell[0] + 1, targetCell[1] + 1):
+                        count_neighbors_to_spill_on += 1
+                        neighbors_to_spill_on.append((targetCell[0] + 1, targetCell[1] + 1))
+                    if grid.is_valid_position(targetCell[0] + 1, targetCell[1] - 1):
+                        count_neighbors_to_spill_on += 1
+                        neighbors_to_spill_on.append((targetCell[0] + 1, targetCell[1] - 1))
+                    if grid.is_valid_position(targetCell[0], targetCell[1] - 1):
+                        count_neighbors_to_spill_on += 1
+                        neighbors_to_spill_on.append((targetCell[0], targetCell[1] - 1))
+                    if grid.is_valid_position(targetCell[0], targetCell[1] + 1):
+                        count_neighbors_to_spill_on += 1
+                        neighbors_to_spill_on.append((targetCell[0], targetCell[1] + 1))
+                    if grid.is_valid_position(targetCell[0] - 1, targetCell[1]):
+                        count_neighbors_to_spill_on += 1
+                        neighbors_to_spill_on.append((targetCell[0] - 1, targetCell[1]))
+                
+                weight_per_neighbor = round(weight_to_spill / count_neighbors_to_spill_on, 2)
+                for neighbor in neighbors_to_spill_on:
+                    if neighbor == targetCell:
                         grid.grid[neighbor[0]][neighbor[1]]['weight'] = weight_per_neighbor
                     else:
                         grid.grid[neighbor[0]][neighbor[1]]['weight'] = round(grid.grid[neighbor[0]][neighbor[1]]['weight'] + weight_per_neighbor, 2)
