@@ -1,6 +1,6 @@
 from grid_world import GridWorld
 from agent import Agent
-from copy import deepcopy
+from copy import deepcopy, copy
 from helper_functions import HelperFunctions
 import random
 import matplotlib.pyplot as plt
@@ -82,7 +82,7 @@ class NSGA2():
 
         self.evalCounter += 1
 
-    def getFronts(self):
+    def getFronts_old(self):
         """Gives back lists corresponding to the fronts of the population."""
         fronts = []
 
@@ -108,6 +108,33 @@ class NSGA2():
 
             else:
                 fronts.append([agent])
+        if False:
+            self.showFront(fronts)
+        
+        return fronts
+
+    def getFronts(self):
+        """Get fronts by removing already found fronts."""
+        fronts = []
+        tmpAgents = copy(self.agents)
+
+        while len(tmpAgents) != 0:
+            #Here we get the domination count (we make it faster by breaking the loop as soon as the count is bigger than 0)
+            for i in range(len(tmpAgents)):
+                dominationCounter = 0
+                for j in range(len(tmpAgents)):
+                    if i != j:
+                        #Prepare value lists
+                        valueList1 = [tmpAgents[i].move_count_f1, tmpAgents[i].weight_shifted_f2, tmpAgents[i].fullCells]
+                        valueList2 = [tmpAgents[j].move_count_f1, tmpAgents[j].weight_shifted_f2, tmpAgents[j].fullCells]
+                        if HelperFunctions.getParetoDominance(valueList2, valueList1): #we check if the point we test against gets dominated (in this case i)
+                            dominationCounter+=1
+                            break #Break the loop since dom count is bigger than 1
+                tmpAgents[i].dominationCount = dominationCounter
+    
+            fronts.append([agent for agent in tmpAgents if agent.dominationCount == 0]) #We append a list of all non dom individuals to the fronts
+            tmpAgents = [agent for agent in tmpAgents if agent.dominationCount != 0] #We keep only dominated agents in the tmpAgents list
+
         if False:
             self.showFront(fronts)
         
@@ -259,5 +286,4 @@ class NSGA2():
 
             #Only keep selected parents as pop
             self.agents = parents
-            print(f"Encoded Path: {self.agents[0].encoded_path}")
             print(f"Evaluations: {self.evalCounter}")
