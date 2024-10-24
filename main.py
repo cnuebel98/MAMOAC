@@ -5,10 +5,36 @@ from grid_world import GridWorld
 from game_loop import GameLoop
 from renderer import Renderer
 from nsga2 import NSGA2
+from copy import deepcopy
+from time import sleep
 
 # Variables for grid size and number of agents
 grid_size = [10, 17]  # Default grid size (rows, cols)
 num_agents = 1  # Default number of agents
+
+def showPath(encodedPath: list[list[tuple, tuple]]):
+    """This method accepts and encoded path and shows it in the grid world render engine."""
+    algo = NSGA2.__new__(NSGA2) #This samples multiple paths
+    algo.__init__()
+    path = algo.agents[0].encoded_path
+    grid = deepcopy(algo.grid)
+    grid_renderer = Renderer(grid)
+    agent = Agent.__new__(Agent)
+    agent.__init__(name="Damn thats too bad")
+    pygame.init()
+    #update the screen with grid and agent
+    for pair in path:
+        agent.moveCoords(pair[0], grid)
+        grid_renderer.draw()
+        agent.draw(grid_renderer.screen, grid)
+        pygame.display.flip()
+        agent.shiftCoords(pair[1], grid)
+        grid_renderer.draw()
+        agent.draw(grid_renderer.screen, grid)
+        pygame.display.flip()
+        sleep(0.1)
+
+    #print(f"Encoded path: {path}")
 
 def start_game():
     pygame.init()
@@ -60,6 +86,9 @@ def main():
                       [('1 Agents', 1), ('2 Agents', 2)],
                       onchange=set_num_agents)
     
+    #Button to run NSGA2
+    menu.add.button('NSGA2', startNSGA2)
+
     # Play button to start the game
     menu.add.button('Play', start_game)
 
@@ -80,6 +109,12 @@ def main():
         # Update display
         pygame.display.flip()
 
+def startNSGA2():
+    nsga2 = NSGA2.__new__(NSGA2)
+    nsga2.__init__()
+    nsga2.mainLoop()
+
 if __name__ == "__main__":
-    #main()
-    nsga2 = NSGA2.__new__(NSGA2).__init__()
+    main()
+    #nsga2 = NSGA2.__new__(NSGA2).__init__()
+    #showPath(None)

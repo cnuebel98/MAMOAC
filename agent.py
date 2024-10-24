@@ -320,8 +320,10 @@ class Agent:
     def shiftCoords(self, targetCell: tuple[int, int], grid:GridWorld):
         self.successful_shift = False
         if grid.grid[self.row][self.col]['weight'] != 0:
-            grid.grid[targetCell[0]][targetCell[1]]['weight'] = round(grid.grid[targetCell[0]][targetCell[1]]['weight'] + grid.grid[targetCell[0]][targetCell[1]]['weight'], 2)
+            #print(f"Weight is {grid.grid[self.row][self.col]['weight']}, shifting it to {targetCell} with weight {grid.grid[targetCell[0]][targetCell[1]]['weight']}")
+            grid.grid[targetCell[0]][targetCell[1]]['weight'] = round(grid.grid[targetCell[0]][targetCell[1]]['weight'] + grid.grid[self.row][self.col]['weight'], 2)
             grid.grid[self.row][self.col]['weight'] = 0.0
+            #print(f"Shifted successfully, new weight is now {grid.grid[targetCell[0]][targetCell[1]]['weight']}, and old cells weight is {grid.grid[self.row][self.col]['weight']}")
             self.successful_shift = True
 
         # spill mechnics

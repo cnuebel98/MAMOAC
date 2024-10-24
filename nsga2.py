@@ -8,13 +8,13 @@ from mpl_toolkits.mplot3d import Axes3D
 import numpy as np
 class NSGA2():
     #Variables
-    popSize = 1000
-    n_eval = 10000
+    popSize = 100
+    n_eval = 1000
     agents: list[Agent] = []
     mutProb = 0.1 #Mutation probability
     crossProb = 0.1 #Crossover probability
     evalCounter = 0
-    numberOfParents = 500
+    numberOfParents = 50
 
     def __init__(self) -> None:
         """Init method creates grid world and prepares agents for the algorithm."""
@@ -32,8 +32,6 @@ class NSGA2():
             self.samplePath(self.agents[x], self.grid)
             #While sampling we already evaluate so we manually change the counter
             self.evalCounter += 1
-
-        self.mainLoop()
             
     def samplePath(self, agent: Agent, grid: GridWorld) -> None:
         """Samples a path for a newly created agent randomly if needed."""
