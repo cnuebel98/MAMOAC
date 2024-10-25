@@ -137,7 +137,13 @@ class Agent:
             self.col = direction[1]
             self.next_weigth_to_move = grid.grid[self.row][self.col]['weight']
             self.successful_move = True
-            #print(f"Move should have been executed, pos is now {(self.row, self.col)}")
+
+            if direction == (self.goal_row, self.goal_col):
+                self.reachedGoal = True
+            
+            if direction == (self.home_row, self.home_col) and self.reachedGoal:
+                self.reachedHome = True
+
         else:
             print("TRIED TO MAKE AN INVALID MOVE")
             exit()

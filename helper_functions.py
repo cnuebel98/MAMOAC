@@ -1,4 +1,5 @@
 from grid_world import GridWorld
+import math
 
 class HelperFunctions:
 
@@ -127,3 +128,7 @@ class HelperFunctions:
                 betterInOne = True
 
         return betterInOne
+    
+    def getDistance(start: tuple[int, int], end: tuple[int, int]):
+        """Calculates the euclidean distance from a given start point to a given end point."""
+        return math.sqrt(math.pow(end[0]-start[0], 2)+math.pow(end[1]-start[1], 2))

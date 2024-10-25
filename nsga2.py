@@ -32,7 +32,70 @@ class NSGA2():
             self.samplePath(self.agents[x], self.grid)
             #While sampling we already evaluate so we manually change the counter
             self.evalCounter += 1
-            
+
+    def greedyPathFinding(self, start:list[tuple, tuple], end:list[tuple, tuple]):
+        """Finds a greedy path between start and goal using the euclidean distance."""
+        #We dont need to simulate it on the grid since we can just use random shifts for this purpose
+        #We will not include the start and end point in the path
+        #print(f"Start: {start}, End: {end}")
+        path = []
+        if start != end:
+            currentPos = start
+            while currentPos != end:
+                possibleMoves = HelperFunctions.getPossibleDirectionCoords((currentPos[0], currentPos[1]), self.grid) #We dont need to use a copy of the grid since the direction method makes no changes
+                possibleMoves.sort(key = lambda x: HelperFunctions.getDistance(x, end)) #Sorts the list by using the euclidean distance to the goal
+                move = possibleMoves[0]
+                shift = random.choice(HelperFunctions.getPossibleDirectionCoords((move[0], move[1]), self.grid)) #Get random shifting direction
+                path.append([move, shift])
+                currentPos = move
+            path.pop(-1)
+        return path    
+
+    def checkPath(self, path:list[list[tuple, tuple]]):
+        """This method checks if a path is fully connected and it repairs it if not."""
+        #First check: Path ends with home
+        home = (self.agents[0].home_row, self.agents[0].home_col)
+        goal = (self.agents[0].goal_row, self.agents[0].goal_col)
+        if path[-1][0] != home:
+            print("Did not end with home.")
+            validShift = random.choice(HelperFunctions.getPossibleDirectionCoords(home, self.grid))
+            path.append([home, validShift])
+            return self.checkPath(path)
+
+        #Second check goal was reached in the path
+        onlyCoordPath = [x[0] for x in path]
+        if goal not in onlyCoordPath:
+            print("Goal was not reached in path")
+            #This is not elegant but ok I guess
+            smallestDistance = np.inf
+            index = None
+            for x in range(len(path)):
+                currentPos = path[x][0]
+                if smallestDistance > HelperFunctions.getDistance(currentPos, goal) or index == None:
+                    smallestDistance = HelperFunctions.getDistance(currentPos, goal)
+                    index = x
+            #Now we have the index of the coord with the smallest distance to the goal
+            #Insert the goal after it with random valid shift
+            path.insert(index+1, [goal, random.choice(HelperFunctions.getPossibleDirectionCoords(goal, self.grid))])
+            return self.checkPath(path)
+
+        #Third check if all cells are connected
+        for x in range(len(path)-1):
+            currentPos = path[x]
+            nextPos = path[x+1]
+            #print(f"CurrentPos: {currentPos}, nextPos: {nextPos}")
+            validMoves = HelperFunctions.getPossibleDirectionCoords(currentPos[0], self.grid)
+            #print(f"validMoves: {validMoves}")
+            #If same pos repeats
+            if currentPos[0] == nextPos[0]:
+                path.pop(x+1)
+                return self.checkPath(path)
+            #If not connected
+            if nextPos[0] not in validMoves:
+                return self.checkPath(path[:x+1] + self.greedyPathFinding(currentPos[0], nextPos[0]) + path[x+1:])
+        
+        return path
+
     def samplePath(self, agent: Agent, grid: GridWorld) -> None:
         """Samples a path for a newly created agent randomly if needed."""
         #Make copy of grid
@@ -68,6 +131,41 @@ class NSGA2():
         #Deepcopy here makes this slow I suppose
         return deepcopy(parent1)
     
+    def onePointCrossover(self, parent1: Agent, parent2: Agent):
+        """Implementation of one point crossover for 2 agents, using greedy pathfinding to connect the parts."""
+        path1 = deepcopy(parent1.encoded_path)
+        path2 = deepcopy(parent2.encoded_path)
+        maxPathLength = min(len(parent1.encoded_path), len(parent2.encoded_path))
+        cuttingPoint = random.randint(1, maxPathLength-2) #1 to maxPath length -1 since we do not want to be the end/start point to be different
+
+        #print(f"maxPathLength: {maxPathLength}")
+        #input()
+
+        #Split the paths to recombine
+        path1fh = path1[:cuttingPoint+1]
+        path1sh = path1[cuttingPoint+1:]
+        path2fh = path2[:cuttingPoint+1]
+        path2sh = path2[cuttingPoint+1:]
+        
+        #print(path2fh)
+        #Create new paths
+        newPath1 = path1fh + self.greedyPathFinding(path1fh[-1][0], path2sh[0][0]) + path2sh
+        newPath2 = path2fh + self.greedyPathFinding(path2fh[-1][0], path1sh[0][0]) + path1sh
+
+        #Check if paths are connected (can be omitted when we are sure that the crossover works correctly)
+        newPath1 = self.checkPath(newPath1)
+        newPath2 = self.checkPath(newPath2)
+
+        #Create new agents and add them to the population
+        nAgent1 = Agent.__new__(Agent)
+        nAgent1.__init__("child")
+        nAgent1.encoded_path = newPath1
+        nAgent2 = Agent.__new__(Agent)
+        nAgent2.__init__("child")
+        nAgent2.encoded_path = newPath1
+
+        return [nAgent1, nAgent2]
+
     def nothingMutation(self, baseAgent: Agent) -> Agent:
         """Just for testing purposes, does nothing."""
         return baseAgent #we use deepcopy here since we dont want to have a pointer to the original instead of a new object
@@ -138,7 +236,7 @@ class NSGA2():
             fronts.append([agent for agent in tmpAgents if agent.dominationCount == 0]) #We append a list of all non dom individuals to the fronts
             tmpAgents = [agent for agent in tmpAgents if agent.dominationCount != 0] #We keep only dominated agents in the tmpAgents list
 
-        if True:
+        if False:
             self.showFront(fronts)
         
         return fronts
@@ -216,39 +314,40 @@ class NSGA2():
                                     (nearestNeighf2[-1].weight_shifted_f2 - nearestNeighf2[0].weight_shifted_f2)+
                                     (nearestNeighf3[-1].fullCells - nearestNeighf3[0].fullCells))
     
-    def selection(self) -> list[Agent]:
+    def selection(self, parents: list[Agent]) -> list[Agent]:
         """Binary tournament selection for NSGA2."""
+        tmpParents = copy(parents)
         selectedInd = []
         #We want to select as many parents as we defined
-        for x in range(self.numberOfParents):
+        for x in range(int(self.popSize/4)): #Popsize / 4 since we get 2 children from each pair of parents and we keep half of the pop 
             #Randomly choose 2 individuals from the population (we do remove them from the pop since we do not want to use deepcopy)
-            agent1 = random.choice(self.agents)
-            agent2 = random.choice(self.agents)
+            agent1 = random.choice(tmpParents)
+            agent2 = random.choice(tmpParents)
 
             #Quick check if the same one got selected:
             if agent1 == agent2:
                 selectedInd.append(agent1)
-                self.agents.remove(agent1)
+                tmpParents.remove(agent1)
                 continue
 
             if agent1.dominationCount != agent2.dominationCount:
                 if agent1.dominationCount < agent2.dominationCount:
                     selectedInd.append(agent1)
-                    self.agents.remove(agent1)
+                    tmpParents.remove(agent1)
                 else:
                     selectedInd.append(agent2)
-                    self.agents.remove(agent2)
+                    tmpParents.remove(agent2)
             else:
                 if agent1.crowdiDist != agent2.crowdiDist:
                     if agent1.crowdiDist > agent2.crowdiDist:
                         selectedInd.append(agent1)
-                        self.agents.remove(agent1)
+                        tmpParents.remove(agent1)
                     else:
                         selectedInd.append(agent2)
-                        self.agents.remove(agent2)
+                        tmpParents.remove(agent2)
                 else:
                     selectedInd.append(agent1)
-                    self.agents.remove(agent1)
+                    tmpParents.remove(agent1)
         
         return selectedInd
 
@@ -261,31 +360,46 @@ class NSGA2():
             if self.evalCounter == 500 or self.evalCounter == 950 :
                 self.showFront(fronts)
         
-            #Get CD for fronts
+            #Get CD for fronts and sort them
             for front in fronts:
                 self.calcCrowdingDistance(front)
+                front.sort(key=lambda x: x.crowdiDist, reverse=True)
 
-            #Select parents
-            parents = self.selection()
+            #Environmental selection
+            #When all fronts are sorted, we can join them all together in a list and pick the number of individuals we want more easily
+            joinedFronts = []
+            for front in fronts:
+                joinedFronts += front
+            
+            #Select surviving individuals and append them to new pop
+            newPop = []
+            for x in range(int(self.popSize/2)):
+                newPop.append(joinedFronts[x])
         
             #Select random parents for crossover
             children = [] #to keep pop size we have to produce as much children as we do have parents
-            while len(children) < len(parents):
-                selectedParents = random.sample(parents, 2)
-                children.append(self.nothingCrossover(selectedParents[0], selectedParents[1]))
+            while len(children) < (self.popSize/2):
+                selectedParents = self.selection(newPop) #Select parents from new pop
+                children += self.onePointCrossover(selectedParents[0], selectedParents[1])
         
             #Now do mutation for the children and evaluate them
+            #print(children)
+            #print(newPop)
             for child in children:
                 if random.random() < self.mutProb:
                     child = self.nothingMutation(child)
                 self.evaluate(child, self.grid)
                 #We now check that the individual reached the goal, if not we sample a new one
-                if not child.reachedHome: #Home can only be reached if we visited goal first so no need for 2 checks
-                    child = self.samplePath(Agent(name=self.evalCounter), self.grid)
+                if not child.reachedHome: #Home can only be reached if we visited goal first so no need for 2 check
+                    #print(child.encoded_path)
+                    print(child.encoded_path)
+                    print(f"SOMETHING WENT HORRIBLY WRONG, CHILD DID NOT REACH HOME: {child.reachedHome}, {child.reachedGoal}")
+                    exit()
             
             #Now merge children and parents lists
-            parents.extend(children)
+            newPop += children
 
-            #Only keep selected parents as pop
-            self.agents = parents
+            #Update pop
+            self.agents = newPop
+            print(f"PopSize: {len(self.agents)}")
             print(f"Evaluations: {self.evalCounter}")
