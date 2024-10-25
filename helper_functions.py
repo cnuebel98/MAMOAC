@@ -42,7 +42,7 @@ class HelperFunctions:
                 directions.append("up")
         return directions
     
-    def getPossibleDirectionCoords(current_cell, temp_grid: GridWorld):
+    def getPossibleDirectionCoords(current_cell, temp_grid: GridWorld) -> list[tuple]:
         '''This function returns a list of possible direction 
         for moving to or shifting to in the form of coordinates'''
         directions = []

@@ -65,7 +65,7 @@ class NSGA2():
         #Second check goal was reached in the path
         onlyCoordPath = [x[0] for x in path]
         if goal not in onlyCoordPath:
-            print("Goal was not reached in path")
+            #print("Goal was not reached in path")
             #This is not elegant but ok I guess
             smallestDistance = np.inf
             index = None
@@ -152,10 +152,6 @@ class NSGA2():
         newPath1 = path1fh + self.greedyPathFinding(path1fh[-1][0], path2sh[0][0]) + path2sh
         newPath2 = path2fh + self.greedyPathFinding(path2fh[-1][0], path1sh[0][0]) + path1sh
 
-        #Check if paths are connected (can be omitted when we are sure that the crossover works correctly)
-        newPath1 = self.checkPath(newPath1)
-        newPath2 = self.checkPath(newPath2)
-
         #Create new agents and add them to the population
         nAgent1 = Agent.__new__(Agent)
         nAgent1.__init__("child")
@@ -169,6 +165,34 @@ class NSGA2():
     def nothingMutation(self, baseAgent: Agent) -> Agent:
         """Just for testing purposes, does nothing."""
         return baseAgent #we use deepcopy here since we dont want to have a pointer to the original instead of a new object
+
+    def getRandomPath(self, start: tuple[int, int], end: tuple[int, int]):
+        """Samples a random path between a start and an end point."""
+        path = []
+        currentPos = start
+        while currentPos != end:
+            validMove = random.choice(HelperFunctions.getPossibleDirectionCoords(currentPos, self.grid))
+            validShift = random.choice(HelperFunctions.getPossibleDirectionCoords(validMove, self.grid))
+            newPair = [validMove, validShift]
+            path.append(newPair)
+            currentPos = validMove
+        
+        #Remove last step since it is the end point and we do not want that
+        path.pop()
+        return path
+
+    def RectangleMutation(self, baseAgent: Agent):
+        '''This cuts the individual at two parts, and finds a new random way between the two cuts, within the bounds of the min and max x and y coordinates'''
+        path = baseAgent.encoded_path
+        cutPoints = sorted(random.sample(range(2, len(path)-2), 2))
+        
+        #If start point == end point we cut the middle part
+        if baseAgent.encoded_path[cutPoints[0]][0] == baseAgent.encoded_path[cutPoints[1]][0]:
+            baseAgent.encoded_path = baseAgent.encoded_path[:cutPoints[0]] + baseAgent.encoded_path[:cutPoints[1]]
+        else:
+            baseAgent.encoded_path = baseAgent.encoded_path[:cutPoints[0]+1] + self.getRandomPath(baseAgent.encoded_path[cutPoints[0]][0], baseAgent.encoded_path[cutPoints[1]][0]) + baseAgent.encoded_path[cutPoints[1]:]
+        #Find random path between the 2 cut points
+        
 
     def evaluate(self, agent: Agent, grid:GridWorld) -> None:
         """Evaluate function for an agent."""
@@ -383,11 +407,12 @@ class NSGA2():
                 children += self.onePointCrossover(selectedParents[0], selectedParents[1])
         
             #Now do mutation for the children and evaluate them
-            #print(children)
-            #print(newPop)
             for child in children:
                 if random.random() < self.mutProb:
-                    child = self.nothingMutation(child)
+                    self.RectangleMutation(child)
+                #Before eval we reapair everything that could have broken due to mutation and crossover
+                #Check if paths are connected (can be omitted when we are sure that the crossover works correctly)
+                child.encoded_path = self.checkPath(child.encoded_path)
                 self.evaluate(child, self.grid)
                 #We now check that the individual reached the goal, if not we sample a new one
                 if not child.reachedHome: #Home can only be reached if we visited goal first so no need for 2 check
