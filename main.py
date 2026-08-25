@@ -6,7 +6,7 @@ from game_loop import GameLoop
 from renderer import Renderer
 
 # Variables for grid size and number of agents
-grid_size = [7, 7]  # Default grid size (rows, cols)
+grid_size = [10, 17]  # Default grid size (rows, cols)
 num_agents = 1  # Default number of agents
 
 def start_game():

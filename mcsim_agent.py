@@ -79,9 +79,8 @@ class MO_MCSimulator:
                     returned_to_start = True
                     
             rollout_counter += 1
-            # now we need to see if the first action of the path 
-            # that was simulated is already in the list of first actions
-            # if not we append it
+            # check, if the first action of the path that was simulated 
+            # is already in the list of first actions if not we append it
             # search tuple is the first action of the path
             search_tuple = (temp_agent.path_directions[0], temp_agent.shift_directions[0])
             # evaluate the agent by full cells and weight shifted
